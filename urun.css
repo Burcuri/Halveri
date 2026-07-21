@@ -1,141 +1,254 @@
-:root{
-  --antalya:#16a34a;
-  --istanbul:#2563eb;
-  --bursa:#eab308;
-  --izmir:#9333ea;
-  --mersin:#dc2626;
-  --adana:#374151;
+// ============================================
+// AKTİF ÜRÜN — URL'den okunuyor (urun.html?urun=Biber gibi)
+// Böylece tek dosya, tüm ürünlerin detay sayfası oluyor.
+// ============================================
+const URL_PARAMS = new URLSearchParams(window.location.search);
+const AKTIF_URUN = URL_PARAMS.get("urun") || "Domates";
+
+// Bilinen ürünler ve emojileri — üst sekmeler ve başlık için.
+// Yeni ürün eklemek istediğinde sadece buraya bir satır eklemen yeterli.
+const URUNLER = [
+  { ad: "Domates",   emoji: "🍅" },
+  { ad: "Salatalık", emoji: "🥒" },
+  { ad: "Biber",     emoji: "🌶️" },
+  { ad: "Patlıcan",  emoji: "🍆" },
+  { ad: "Karpuz",    emoji: "🍉" },
+];
+
+function urunEmoji(ad) {
+  const bulunan = URUNLER.find(u => u.ad === ad);
+  return bulunan ? bulunan.emoji : "🥬";
 }
 
-body{ background:#f5f5f5; }
+// ============================================
+// SABİTLER — il renkleri hiç değişmeyecek
+// ============================================
+const ILLER = [
+  { id: "antalya",  ad: "Antalya",  renk: "#16a34a" },
+  { id: "istanbul", ad: "İstanbul", renk: "#2563eb" },
+  { id: "bursa",    ad: "Bursa",    renk: "#eab308" },
+  { id: "izmir",    ad: "İzmir",    renk: "#9333ea" },
+  { id: "mersin",   ad: "Mersin",   renk: "#dc2626" },
+  { id: "adana",    ad: "Adana",    renk: "#374151" },
+];
 
-.topbar{ padding:14px 20px; }
-.backlink{ color:#1f6f43; text-decoration:none; font-weight:600; font-size:14px; }
-.backlink:hover{ text-decoration:underline; }
+const GRI_RENK = "#c7c7c7"; // favori seçiliyken diğer illerin soluk hali
 
-/* SPONSOR */
-.sponsor{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  background:#fff7e6;
-  border:1px solid #f0d999;
-  border-radius:10px;
-  margin:0 20px 16px;
-  padding:12px 16px;
-}
-.sponsor-icon{ font-size:26px; }
-.sponsor-text{ display:flex; flex-direction:column; line-height:1.3; }
-.sponsor-label{ font-size:10px; letter-spacing:1px; color:#b8860b; font-weight:700; }
-.sponsor-text strong{ font-size:14px; color:#333; }
+// Görünürlük durumu (hepsi başlangıçta açık)
+const gorunurluk = {};
+ILLER.forEach(il => gorunurluk[il.id] = true);
 
-/* ÜRÜN SEKMELERİ */
-.urun-tabs{
-  display:flex;
-  gap:8px;
-  padding:0 20px 12px;
-  overflow-x:auto;
+// Favori (takip) durumu — tarayıcıda, ürüne özel saklanıyor.
+// En az bir il favoriye alınınca, favori olmayanlar grafikte griye döner.
+const FAVORI_ANAHTAR = "favoriler_" + AKTIF_URUN;
+let favoriler = {};
+try {
+  favoriler = JSON.parse(localStorage.getItem(FAVORI_ANAHTAR)) || {};
+} catch (e) {
+  favoriler = {};
 }
-.urun-tabs .tab{
-  border:none;
-  background:#e5e5e5;
-  padding:10px 16px;
-  border-radius:20px;
-  font-size:14px;
-  cursor:pointer;
-  white-space:nowrap;
-}
-.urun-tabs .tab.active{
-  background:#1f6f43;
-  color:white;
-  font-weight:600;
+ILLER.forEach(il => { if (!(il.id in favoriler)) favoriler[il.id] = false; });
+
+function favorileriKaydet() {
+  localStorage.setItem(FAVORI_ANAHTAR, JSON.stringify(favoriler));
 }
 
-/* PANEL */
-.urun-panel{
-  max-width:900px;
-  margin:0 auto;
-  padding:0 20px 40px;
+let aktifAralik = "hafta";   // hafta | ay | yil
+let aktifTip = "cizgi";      // cizgi | geometrik | nokta | kolon
+let chart = null;
+
+// ============================================
+// VERİ KATMANI — Supabase'den gerçek veri.
+// ============================================
+async function veriGetir(urunAdi, aralik) {
+  const gunSayisi = { hafta: 7, ay: 30, yil: 365 }[aralik];
+  const baslangic = new Date(Date.now() - gunSayisi * 24 * 60 * 60 * 1000)
+    .toISOString().slice(0, 10);
+
+  const { data, error } = await supabaseClient
+    .from("fiyatlar")
+    .select("il, tarih, min_fiyat, max_fiyat")
+    .eq("urun", urunAdi)
+    .gte("tarih", baslangic)
+    .order("tarih", { ascending: true });
+
+  if (error) {
+    console.error("Supabase okuma hatası:", error);
+    return { tarihler: [], seriler: {} };
+  }
+
+  const tarihler = [...new Set(data.map(r => r.tarih))].sort();
+
+  const seriler = {};
+  ILLER.forEach(il => {
+    seriler[il.id] = tarihler.map(t => {
+      const satir = data.find(r => r.il === il.ad && r.tarih === t);
+      return satir ? +((satir.min_fiyat + satir.max_fiyat) / 2).toFixed(2) : null;
+    });
+  });
+
+  return { tarihler, seriler };
 }
 
-.urun-baslik{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-bottom:14px;
-}
-.urun-baslik h1{ font-size:22px; margin:0; }
-
-.takip-btn{
-  border:2px solid #1f6f43;
-  background:white;
-  color:#1f6f43;
-  padding:8px 16px;
-  border-radius:8px;
-  font-weight:600;
-  cursor:pointer;
-}
-.takip-btn.aktif{
-  background:#1f6f43;
-  color:white;
+function etiketUret(tarihler) {
+  return tarihler.map(t => new Date(t).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" }));
 }
 
-.grafik-kutu{
-  background:white;
-  border-radius:12px;
-  padding:16px;
-  box-shadow:0 1px 3px rgba(0,0,0,0.08);
-  height:340px;
-  margin-bottom:16px;
+// ============================================
+// GRAFİK TİPİNE GÖRE CHART.JS AYARLARI
+// ============================================
+function datasetAyarlari(tip) {
+  switch (tip) {
+    case "cizgi":
+      return { type: "line", tension: 0, pointRadius: 2, borderWidth: 2, fill: false, showLine: true };
+    case "geometrik":
+      return { type: "line", tension: 0.5, pointRadius: 0, borderWidth: 2.5, fill: true, showLine: true };
+    case "nokta":
+      return { type: "line", tension: 0, pointRadius: 4, borderWidth: 0, fill: false, showLine: false };
+    case "kolon":
+      return { type: "bar" };
+    default:
+      return { type: "line" };
+  }
 }
 
-.kontrol-satiri{
-  display:flex;
-  flex-wrap:wrap;
-  gap:20px;
-  align-items:center;
-  justify-content:space-between;
-  background:white;
-  border-radius:12px;
-  padding:14px 16px;
-  margin-bottom:16px;
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
-.zaman-secim{ display:flex; gap:6px; }
-.zaman-secim button{
-  border:1px solid #ddd;
-  background:#f5f5f5;
-  padding:8px 14px;
-  border-radius:8px;
-  cursor:pointer;
-  font-size:13px;
-}
-.zaman-secim button.active{
-  background:#1f6f43;
-  color:white;
-  border-color:#1f6f43;
+async function grafigiCiz() {
+  const { tarihler, seriler } = await veriGetir(AKTIF_URUN, aktifAralik);
+
+  const kutu = document.getElementById("fiyatGrafik").parentElement;
+  if (tarihler.length === 0) {
+    kutu.innerHTML = `<p style="text-align:center;color:#777;padding-top:140px">
+      Bu aralıkta "${AKTIF_URUN}" için henüz veri yok. Supabase'e CSV yüklendikçe burası dolacak.
+    </p>`;
+    return;
+  }
+  if (!document.getElementById("fiyatGrafik")) {
+    kutu.innerHTML = `<canvas id="fiyatGrafik"></canvas>`;
+  }
+
+  const etiketler = etiketUret(tarihler);
+  const ayar = datasetAyarlari(aktifTip);
+  const favoriVarMi = Object.values(favoriler).some(v => v);
+
+  const datasets = ILLER
+    .filter(il => gorunurluk[il.id])
+    .map(il => {
+      const favoriliMi = favoriler[il.id];
+      const soluk = favoriVarMi && !favoriliMi;
+      const renk = soluk ? GRI_RENK : il.renk;
+      return {
+        label: il.ad,
+        data: seriler[il.id],
+        borderColor: renk,
+        backgroundColor: aktifTip === "geometrik" ? hexToRgba(renk, soluk ? 0.05 : 0.12) : renk,
+        spanGaps: false,
+        ...ayar,
+        borderWidth: favoriliMi ? (ayar.borderWidth || 2) + 1.5 : ayar.borderWidth,
+      };
+    });
+
+  const config = {
+    type: aktifTip === "kolon" ? "bar" : "line",
+    data: { labels: etiketler, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 300 },
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { callback: v => v + " ₺" } }
+      }
+    }
+  };
+
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById("fiyatGrafik"), config);
 }
 
-.grafik-tipi{ display:flex; gap:14px; flex-wrap:wrap; font-size:13px; }
-.grafik-tipi label{ display:flex; align-items:center; gap:6px; cursor:pointer; }
+// ============================================
+// İL LİSTESİ (göz = göster/gizle, 👍 = favori/takip)
+// ============================================
+function ilListesiOlustur() {
+  const kutu = document.getElementById("ilListesi");
+  kutu.innerHTML = "";
+  ILLER.forEach(il => {
+    const satir = document.createElement("div");
+    satir.className = "il-satir" + (gorunurluk[il.id] ? "" : " gizli");
+    satir.innerHTML = `
+      <span class="goz" data-aksiyon="goz">${gorunurluk[il.id] ? "👁" : "🚫"}</span>
+      <button class="favori-btn ${favoriler[il.id] ? "aktif" : ""}" data-aksiyon="favori" title="Bu ili takip et">👍</button>
+      <span>${il.ad}</span>
+      <span class="renk-nokta" style="background:${il.renk}"></span>
+    `;
+    satir.querySelector('[data-aksiyon="goz"]').addEventListener("click", () => {
+      gorunurluk[il.id] = !gorunurluk[il.id];
+      ilListesiOlustur();
+      grafigiCiz();
+    });
+    satir.querySelector('[data-aksiyon="favori"]').addEventListener("click", (e) => {
+      e.stopPropagation();
+      favoriler[il.id] = !favoriler[il.id];
+      favorileriKaydet();
+      ilListesiOlustur();
+      grafigiCiz();
+    });
+    kutu.appendChild(satir);
+  });
+}
 
-.il-listesi{
-  background:white;
-  border-radius:12px;
-  padding:8px;
+// ============================================
+// ÜST SEKMELER (ürünler arası geçiş)
+// ============================================
+function sekmeleriOlustur() {
+  const kutu = document.getElementById("urunTabs");
+  kutu.innerHTML = URUNLER.map(u => `
+    <button class="tab ${u.ad === AKTIF_URUN ? "active" : ""}" data-urun="${u.ad}">
+      ${u.emoji} ${u.ad}
+    </button>
+  `).join("");
+  kutu.querySelectorAll(".tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      window.location.href = "urun.html?urun=" + encodeURIComponent(btn.dataset.urun);
+    });
+  });
 }
-.il-satir{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:10px 12px;
-  border-radius:8px;
-  cursor:pointer;
-  font-size:14px;
+
+function basligiGuncelle() {
+  document.getElementById("urunEmoji").textContent = urunEmoji(AKTIF_URUN);
+  document.getElementById("urunAd").textContent = AKTIF_URUN;
+  document.title = AKTIF_URUN + " Fiyatları — Türkiye Hal Fiyatları";
 }
-.il-satir:hover{ background:#f5f5f5; }
-.il-satir .goz{ font-size:16px; width:20px; text-align:center; }
-.il-satir .renk-nokta{
-  width:14px; height:14px; border-radius:50%; margin-left:auto;
-}
-.il-satir.gizli{ opacity:0.35; }
+
+// ============================================
+// KONTROLLER
+// ============================================
+document.getElementById("zamanSecim").addEventListener("click", (e) => {
+  if (e.target.tagName !== "BUTTON") return;
+  document.querySelectorAll("#zamanSecim button").forEach(b => b.classList.remove("active"));
+  e.target.classList.add("active");
+  aktifAralik = e.target.dataset.aralik;
+  grafigiCiz();
+});
+
+document.getElementById("grafikTipi").addEventListener("change", (e) => {
+  aktifTip = e.target.value;
+  grafigiCiz();
+});
+
+document.getElementById("takipBtn").addEventListener("click", (e) => {
+  e.target.classList.toggle("aktif");
+  e.target.textContent = e.target.classList.contains("aktif") ? "✓ Takip Ediliyor" : "+ Takip Et";
+});
+
+// ============================================
+// BAŞLAT
+// ============================================
+basligiGuncelle();
+sekmeleriOlustur();
+ilListesiOlustur();
+grafigiCiz();
