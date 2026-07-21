@@ -252,3 +252,16 @@ basligiGuncelle();
 sekmeleriOlustur();
 ilListesiOlustur();
 grafigiCiz();
+.favori-btn{
+  border:none;
+  background:transparent;
+  font-size:15px;
+  cursor:pointer;
+  padding:2px;
+  filter:grayscale(1);
+  opacity:0.35;
+}
+.favori-btn.aktif{
+  filter:none;
+  opacity:1;
+}
