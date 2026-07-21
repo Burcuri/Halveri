@@ -30,7 +30,7 @@ async function veriYukle() {
 }
 
 function detaySayfasiVarMi(urunAdi) {
-  return urunAdi === "Domates"; // ilk sürümde sadece Domates detayı var
+  return true;
 }
 
 function tabloOlustur(liste) {
