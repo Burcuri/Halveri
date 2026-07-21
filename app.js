@@ -3,7 +3,6 @@
 // Veri kaynağı: her il için elle toplanıp haftalık CSV olarak
 // içeri aktarılan 'fiyatlar' tablosu.
 // ============================================
-
 let tumVeri = [];
 
 async function veriYukle() {
@@ -53,7 +52,9 @@ function tabloOlustur(liste) {
   tablo.querySelectorAll("tr").forEach(satir => {
     satir.addEventListener("click", () => {
       const urunAdi = satir.dataset.urun;
-      if (detaySayfasiVarMi(urunAdi)) window.location.href = "urun.html";
+      if (detaySayfasiVarMi(urunAdi)) {
+        window.location.href = "urun.html?urun=" + encodeURIComponent(urunAdi);
+      }
     });
   });
 }
