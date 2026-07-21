@@ -1,53 +1,49 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HalVeri</title>
-
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Türkiye Hal Fiyatları</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-
 <body>
 
-<div class="phone">
+<header>
+  <h1>Türkiye Hal Fiyatları</h1>
+  <button id="updateButton">Verileri Güncelle</button>
+</header>
 
-    <header class="topbar">
-        <h1>HalVeri</h1>
-        <span class="version">v0.1</span>
-    </header>
+<section class="info">
+  <div>
+    Son Güncelleme
+    <br>
+    <span id="updateTime">-</span>
+  </div>
+  <div>
+    Toplam Ürün
+    <br>
+    <span id="productCount">0</span>
+  </div>
+</section>
 
-    <section class="hero">
+<section>
+  <input type="text" id="search" placeholder="Ürün ara...">
 
-        <h2>Türkiye Hal Fiyatları</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Ürün</th>
+        <th>İl</th>
+        <th>Min</th>
+        <th>Max</th>
+      </tr>
+    </thead>
+    <tbody id="priceTable"></tbody>
+  </table>
+</section>
 
-        <p>
-            Günlük toptancı hal fiyatları
-        </p>
-
-        <button id="updateBtn">
-            Verileri Güncelle
-        </button>
-
-    </section>
-
-    <section class="search">
-
-        <input
-            id="search"
-            type="text"
-            placeholder="Ürün ara..."
-        >
-
-    </section>
-
-    <section id="list" class="list">
-
-    </section>
-
-</div>
-
+<script src="config.js"></script>
 <script src="app.js"></script>
-
 </body>
 </html>

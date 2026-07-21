@@ -1,77 +1,90 @@
-const products = [
-    {
-        urun: "Domates",
-        il: "Antalya",
-        min: 22,
-        max: 28
-    },
-    {
-        urun: "Domates",
-        il: "İstanbul",
-        min: 30,
-        max: 35
-    },
-    {
-        urun: "Salatalık",
-        il: "Antalya",
-        min: 18,
-        max: 23
-    },
-    {
-        urun: "Patlıcan",
-        il: "Bursa",
-        min: 20,
-        max: 30
-    }
-];
+// ============================================
+// Ana liste ekranı — artık Supabase'den gerçek veri okuyor.
+// Veri kaynağı: her il için elle toplanıp haftalık CSV olarak
+// içeri aktarılan 'fiyatlar' tablosu.
+// ============================================
 
-const list = document.getElementById("list");
-const search = document.getElementById("search");
+let tumVeri = [];
 
-function render(data){
+async function veriYukle() {
+  const { data, error } = await supabaseClient
+    .from("fiyatlar")
+    .select("*")
+    .order("tarih", { ascending: false });
 
-    list.innerHTML = "";
+  if (error) {
+    console.error("Supabase okuma hatası:", error);
+    document.getElementById("priceTable").innerHTML =
+      `<tr><td colspan="4">Veri yüklenemedi. Konsolu kontrol et.</td></tr>`;
+    return [];
+  }
 
-    data.forEach(item=>{
+  // Her (ürün, il) çifti için en güncel satırı tut
+  const enGuncel = new Map();
+  data.forEach(satir => {
+    const anahtar = satir.urun + "|" + satir.il;
+    if (!enGuncel.has(anahtar)) enGuncel.set(anahtar, satir);
+  });
 
-        list.innerHTML += `
-        <div class="card">
-
-            <h3>${item.urun}</h3>
-
-            <div>${item.il}</div>
-
-            <div class="price">
-                <span>Min: ${item.min} ₺</span>
-                <span>Max: ${item.max} ₺</span>
-            </div>
-
-        </div>
-        `;
-
-    });
-
+  return Array.from(enGuncel.values());
 }
 
-render(products);
+function detaySayfasiVarMi(urunAdi) {
+  return urunAdi === "Domates"; // ilk sürümde sadece Domates detayı var
+}
 
-search.addEventListener("input",()=>{
+function tabloOlustur(liste) {
+  const tablo = document.getElementById("priceTable");
 
-    const q = search.value.toLowerCase();
+  if (liste.length === 0) {
+    tablo.innerHTML = `<tr><td colspan="4">Henüz veri yok. Supabase'e ilk CSV'yi yükledikten sonra burada görünecek.</td></tr>`;
+    return;
+  }
 
-    const filtered = products.filter(x=>
+  tablo.innerHTML = liste.map(veri => `
+    <tr data-urun="${veri.urun}">
+      <td>${veri.urun}</td>
+      <td>${veri.il}</td>
+      <td>${veri.min_fiyat}</td>
+      <td>${veri.max_fiyat}</td>
+    </tr>
+  `).join("");
 
-        x.urun.toLowerCase().includes(q) ||
-        x.il.toLowerCase().includes(q)
+  tablo.querySelectorAll("tr").forEach(satir => {
+    satir.addEventListener("click", () => {
+      const urunAdi = satir.dataset.urun;
+      if (detaySayfasiVarMi(urunAdi)) window.location.href = "urun.html";
+    });
+  });
+}
 
-    );
+function sayaclariGuncelle(liste) {
+  const urunSayisi = new Set(liste.map(v => v.urun)).size;
+  document.getElementById("productCount").innerHTML = urunSayisi;
 
-    render(filtered);
+  const enYeniTarih = liste.reduce((en, v) => (!en || v.tarih > en ? v.tarih : en), null);
+  document.getElementById("updateTime").innerHTML = enYeniTarih
+    ? new Date(enYeniTarih).toLocaleDateString("tr-TR")
+    : "-";
+}
 
+async function ekraniYenile() {
+  tumVeri = await veriYukle();
+  tabloOlustur(tumVeri);
+  sayaclariGuncelle(tumVeri);
+}
+
+document.getElementById("search").addEventListener("keyup", function () {
+  const arama = this.value.toLowerCase();
+  const filtre = tumVeri.filter(x =>
+    x.urun.toLowerCase().includes(arama) || x.il.toLowerCase().includes(arama)
+  );
+  tabloOlustur(filtre);
 });
 
-document.getElementById("updateBtn").addEventListener("click",()=>{
+// "Verileri Güncelle" — Supabase'e karşı yeniden sorgu atar.
+// (Canlı scraping yok; asıl güncelleme sen CSV yükleyince oluyor,
+// bu buton sadece ekranı Supabase'deki en son haliyle tazeliyor.)
+document.getElementById("updateButton").addEventListener("click", ekraniYenile);
 
-    alert("Şimdilik örnek veri gösteriliyor.\n\nBir sonraki adımda Supabase'den gerçek veriler gelecek.");
-
-});
+ekraniYenile();
