@@ -1,0 +1,27 @@
+name: Izmir Hal Fiyatlari - Gunluk Cekim
+
+on:
+  schedule:
+    - cron: "0 9 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  cek-ve-yaz:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repo'yu indir
+        uses: actions/checkout@v4
+
+      - name: Python kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Bağımlılıkları kur
+        run: pip install requests beautifulsoup4 lxml supabase
+
+      - name: Izmir verisini çek ve Supabase'e yaz
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scrapers/izmir_otomatik.py
