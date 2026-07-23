@@ -22,6 +22,11 @@ NOT (23.07.2026 güncellemesi):
     Supabase'e görünüşte aynı ama aslında farklı bayt dizileriyle
     yazılıyordu ve uygulama bunları hiç bulamıyordu. Artık
     Türkçe'ye özel turkce_title() fonksiyonu kullanılıyor.
+  - EK DÜZELTME: Site tutarsız davranabiliyor — aynı istek bazen
+    veri döndürüyor, bazen "kayıt yok" diyor (muhtemelen sunucu
+    tarafı önbellek/yük dengeleme sorunu). Artık her kategori için
+    boş sonuç gelirse birkaç saniye bekleyip taze bir oturumla
+    tekrar deneniyor (en fazla 3 deneme).
 
 Ortam değişkenleri (GitHub Actions secrets üzerinden gelecek):
     SUPABASE_URL
@@ -79,14 +84,14 @@ def oturum_ac() -> requests.Session:
     return s
 
 
-def kategori_verisini_cek(s: requests.Session, gun: date, tip: int) -> list[dict]:
+def kategori_verisini_cek(s: requests.Session, gun: date, tip: int, deneme: int = 1) -> list[dict]:
     params = {"date": gun.strftime("%Y-%m-%d"), "tip": tip, "aranacak": ""}
     resp = s.get(BASE_URL, params=params, timeout=30)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "lxml")
 
     if "Listelenecek kayıt bulunmamaktadır" in resp.text:
-        print(f"  [{KATEGORILER[tip]}] site 'kayıt yok' dedi (durum kodu {resp.status_code})")
+        print(f"  [{KATEGORILER[tip]}] site 'kayıt yok' dedi (deneme {deneme}, durum kodu {resp.status_code})")
         return []
 
     table = None
@@ -95,7 +100,7 @@ def kategori_verisini_cek(s: requests.Session, gun: date, tip: int) -> list[dict
             table = t
             break
     if table is None:
-        print(f"  [{KATEGORILER[tip]}] tablo bulunamadı (durum kodu {resp.status_code})")
+        print(f"  [{KATEGORILER[tip]}] tablo bulunamadı (deneme {deneme}, durum kodu {resp.status_code})")
         return []
 
     def sayiya_cevir(deger):
@@ -124,15 +129,31 @@ def kategori_verisini_cek(s: requests.Session, gun: date, tip: int) -> list[dict
             "max_fiyat": max_f,
             "kaynak_url": "eislem.izmir.bel.tr (Izmir B.B. resmi)",
         })
-    print(f"  [{KATEGORILER[tip]}] {len(satirlar)} satır bulundu.")
+    print(f"  [{KATEGORILER[tip]}] {len(satirlar)} satır bulundu (deneme {deneme}).")
     return satirlar
 
 
+MAKS_DENEME = 3
+BEKLEME_SANIYE = 8
+
+
 def gun_verisini_cek(gun: date) -> list[dict]:
-    s = oturum_ac()
     tum_satirlar = []
     for tip in KATEGORILER:
-        tum_satirlar.extend(kategori_verisini_cek(s, gun, tip))
+        satirlar = []
+        for deneme in range(1, MAKS_DENEME + 1):
+            # Her denemede taze bir oturum açıyoruz — site bazen ilk
+            # oturumda "kayıt yok" deyip ikinci/üçüncü denemede veri
+            # döndürebiliyor (muhtemelen sunucu tarafı önbellek/yük
+            # dengeleme tutarsızlığı).
+            s = oturum_ac()
+            satirlar = kategori_verisini_cek(s, gun, tip, deneme=deneme)
+            if satirlar:
+                break
+            if deneme < MAKS_DENEME:
+                print(f"  [{KATEGORILER[tip]}] {BEKLEME_SANIYE} saniye bekleyip tekrar denenecek...")
+                time.sleep(BEKLEME_SANIYE)
+        tum_satirlar.extend(satirlar)
         time.sleep(1)  # siteye nazik davranalım
     return tum_satirlar
 
