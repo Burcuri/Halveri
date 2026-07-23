@@ -94,7 +94,7 @@ function bosRenkIndexBul() {
 function tipEkle(anaUrun, altTip) {
   if (takipListesi.some(t => t.anaUrun === anaUrun && t.altTip === altTip)) return;
   if (takipListesi.length >= 6) {
-    alert("En fazla 6 ürün tipi takip edebilirsin. Önce listeden birini çıkar (cip üzerindeki × işareti).");
+    alert("En fazla 6 ürün tipi takip edebilirsiniz.");
     return;
   }
   takipListesi.push({ anaUrun, altTip, renkIndex: bosRenkIndexBul() });
