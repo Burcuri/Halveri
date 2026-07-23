@@ -27,6 +27,15 @@ NOT (23.07.2026 güncellemesi):
     tarafı önbellek/yük dengeleme sorunu). Artık her kategori için
     boş sonuç gelirse birkaç saniye bekleyip taze bir oturumla
     tekrar deneniyor (en fazla 3 deneme).
+  - TAKVİM DÜZELTMESİ: Site zaten "bugün" için sorgulansa bile
+    açıklama olarak "önceki günün Ticaret Bakanlığı Hal Kayıt
+    Sistemi verilerine göre düzenlenmiştir" notu gösteriyor —
+    yani günün verisi gün içinde henüz kesinleşmemiş/tam
+    yayınlanmamış olabiliyor. Bu yüzden script artık varsayılan
+    olarak "bugün" değil "DÜN" için veri çekiyor — dünün verisi
+    kesinleşmiş olduğu için çok daha güvenilir/tutarlı geliyor.
+    (Elle belirli bir tarih için çalıştırmak istersen komut
+    satırından hâlâ tarih verebilirsin: python izmir_otomatik.py 2026-07-20)
 
 Ortam değişkenleri (GitHub Actions secrets üzerinden gelecek):
     SUPABASE_URL
@@ -36,7 +45,7 @@ Ortam değişkenleri (GitHub Actions secrets üzerinden gelecek):
 import os
 import sys
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import requests
 from bs4 import BeautifulSoup
@@ -169,7 +178,9 @@ def supabaseye_yaz(satirlar: list[dict]) -> None:
 
 
 def main():
-    gun = date.today()
+    # Varsayılan: DÜN (site verisi bugün için henüz kesinleşmemiş olabiliyor,
+    # dünün verisi kesinleşmiş ve stabil). Elle tarih verilirse onu kullanır.
+    gun = date.today() - timedelta(days=1)
     if len(sys.argv) > 1:
         gun = datetime.strptime(sys.argv[1], "%Y-%m-%d").date()
 
