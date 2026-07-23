@@ -112,6 +112,16 @@ tbody tr:hover {
   max-width:900px; margin:16px auto 0; padding:16px 20px;
   background:#fff; border-radius:12px;
 }
+.kisisel-satir{ display:flex; flex-wrap:wrap; gap:10px; }
+.bant-btn{
+  border:1px solid #ccc; background:#f5f5f5; color:#333;
+  padding:10px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;
+}
+.bant-btn-vurgulu{ background:#1f6f43; color:white; border-color:#1f6f43; }
+
+.dropdown-panel{
+  margin-top:12px; padding:14px; background:#f9f9f9; border-radius:10px;
+}
 .il-bandi-baslik{ font-size:12px; color:#555; margin-bottom:10px; font-weight:600; }
 .il-bandi-satirlar{ display:flex; flex-wrap:wrap; gap:10px 18px; }
 .il-secenek-turkiye{ font-weight:600; }
@@ -119,9 +129,8 @@ tbody tr:hover {
   font-size:10px; color:#1f6f43; background:white; border:1px solid #1f6f43;
   padding:2px 6px; border-radius:6px; font-weight:600;
 }
-.kisisel-ayrac{ height:1px; background:#eee; margin:16px 0; }
 
-.takip-cipleri{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+.takip-cipleri{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
 .takip-cip{
   display:inline-flex; align-items:center; gap:6px;
   background:white; border:2px solid #ccc; border-radius:20px;
@@ -132,13 +141,24 @@ tbody tr:hover {
 .cip-kaldir{ margin-left:4px; font-weight:400; opacity:0.6; padding:0 2px; cursor:pointer; }
 .cip-kaldir:hover{ opacity:1; }
 
-.urun-ekle-btn{
-  background:#1f6f43; color:white; border-radius:8px; padding:8px 16px; font-size:13px;
-}
+.katalog-urun{ margin-bottom:12px; }
+.katalog-urun:last-child{ margin-bottom:0; }
+.katalog-urun-baslik{ font-weight:600; font-size:14px; margin-bottom:6px; }
+.katalog-alt-tipler{ display:flex; flex-wrap:wrap; gap:10px 16px; padding-left:8px; }
+.alt-tip-secenek{ display:flex; align-items:center; gap:5px; font-size:13px; cursor:pointer; }
 
-.urun-ekle-panel{
-  margin-top:12px; padding:12px; background:#f9f9f9; border-radius:10px;
+/* REKLAM BANDI — beyaz zemin, lacivert yazı/logo */
+.sponsor{
+  display:flex; align-items:center; gap:12px;
+  background:#ffffff; border:1px solid #e2e2e2; border-radius:10px;
+  max-width:900px; margin:16px auto; padding:14px 18px;
 }
+.sponsor-icon{
+  font-size:20px; color:#1e3a5f; width:32px; height:32px;
+  display:flex; align-items:center; justify-content:center;
+  border:2px solid #1e3a5f; border-radius:8px; flex-shrink:0;
+}
+.sponsor-text{ font-size:14px; font-weight:700; color:#1e3a5f; letter-spacing:0.3px; }
 .katalog-urun{ margin-bottom:12px; }
 .katalog-urun:last-child{ margin-bottom:0; }
 .katalog-urun-baslik{ font-weight:600; font-size:14px; margin-bottom:6px; }

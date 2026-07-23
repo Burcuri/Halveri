@@ -37,6 +37,9 @@ function turkiyeGeneliToggle() {
 }
 
 function ilBandiCiz() {
+  document.getElementById("illerSayisi").textContent =
+    (seciliIller.length + (turkiyeGeneli ? 1 : 0)) > 0 ? `(${seciliIller.length + (turkiyeGeneli ? 1 : 0)})` : "";
+
   const kutu = document.getElementById("ilBandiSatirlari");
   kutu.innerHTML = `
     <label class="il-secenek il-secenek-turkiye">
@@ -60,6 +63,11 @@ function ilBandiCiz() {
     cb.addEventListener("change", () => ilBandiToggle(cb.dataset.il));
   });
 }
+
+document.getElementById("illerBtn").addEventListener("click", () => {
+  const panel = document.getElementById("illerPanel");
+  panel.style.display = (panel.style.display === "none") ? "block" : "none";
+});
 
 // ============================================
 // TAKİP EDİLEN ÜRÜN TİPLERİ — sadece renk taşıyor artık,

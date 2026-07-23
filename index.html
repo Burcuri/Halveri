@@ -12,31 +12,32 @@
 
 <header>
   <h1>Türkiye Hal Fiyatları</h1>
-  <button id="updateButton">Verileri Güncelle</button>
 </header>
 
-<!-- KİŞİSELLEŞTİRME BANDI — il seçimi + takip edilen ürün tipleri, tek yerde -->
+<!-- KİŞİSELLEŞTİRME BANDI — 3 buton yan yana -->
 <section class="kisisel-bant">
-  <div class="il-bandi-baslik">📍 Takip ettiğin iller (en fazla 4) — seçim sırası gösterge tipini belirler</div>
-  <div class="il-bandi-satirlar" id="ilBandiSatirlari"></div>
+  <div class="kisisel-satir">
+    <button id="illerBtn" class="bant-btn">📍 İller <span id="illerSayisi"></span></button>
+    <button id="urunEkleBtn" class="bant-btn bant-btn-vurgulu">+ Ürün Ekle</button>
+    <button id="updateButton" class="bant-btn">🔄 Verileri Güncelle</button>
+  </div>
 
-  <div class="kisisel-ayrac"></div>
+  <div id="illerPanel" class="dropdown-panel" style="display:none">
+    <div class="il-bandi-baslik">Takip ettiğin iller (en fazla 4) — seçim sırası gösterge tipini belirler</div>
+    <div class="il-bandi-satirlar" id="ilBandiSatirlari"></div>
+  </div>
 
-  <div class="il-bandi-baslik">🍅 Takip ettiğin ürün tipleri</div>
-  <div id="takipCipleri" class="takip-cipleri"></div>
-  <button id="urunEkleBtn" class="urun-ekle-btn">+ Ürün Ekle</button>
-  <div id="urunEklePanel" class="urun-ekle-panel" style="display:none">
+  <div id="urunEklePanel" class="dropdown-panel" style="display:none">
     <div id="katalogListesi"></div>
   </div>
+
+  <div id="takipCipleri" class="takip-cipleri"></div>
 </section>
 
-<!-- SPONSOR -->
+<!-- REKLAM BANDI -->
 <div class="sponsor">
-  <span class="sponsor-icon">🚜</span>
-  <div class="sponsor-text">
-    <span class="sponsor-label">SPONSOR</span>
-    <strong>LOREM IPSUM TARIM MAKİNALARI</strong>
-  </div>
+  <span class="sponsor-icon">◆</span>
+  <span class="sponsor-text">Lorem Ipsum Sponsorluk</span>
 </div>
 
 <!-- CANLI GRAFİK -->
