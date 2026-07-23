@@ -30,9 +30,10 @@
   <!-- KİŞİSELLEŞTİRME BANDI -->
   <section class="kisisel-bant">
     <div class="kisisel-satir">
-      <button id="illerBtn" class="bant-btn"><span class="ikon">📍</span> İller <span id="illerSayisi" class="bant-sayac"></span></button>
-      <button id="urunEkleBtn" class="bant-btn bant-btn-vurgulu">+ Ürün Ekle</button>
-      <button id="updateButton" class="bant-btn"><span class="ikon">🔄</span> Verileri Güncelle</button>
+      <span class="kisisel-baslik">Kişisel Ayarlarım:</span>
+      <button id="illerBtn" class="bant-btn">Şehir <span id="illerSayisi" class="bant-sayac"></span></button>
+      <button id="urunEkleBtn" class="bant-btn bant-btn-vurgulu">Ürün</button>
+      <button id="updateButton" class="bant-btn">Güncelle</button>
     </div>
 
     <div id="illerPanel" class="dropdown-panel" style="display:none">
@@ -56,7 +57,7 @@
   <!-- CANLI GRAFİK -->
   <section class="canli-grafik-bolumu">
     <div class="grafik-baslik-satiri">
-      <span class="eyebrow">Canlı Seyir</span>
+      <span class="eyebrow">Canlı Grafik</span>
       <div class="zaman-secim" id="zamanSecim">
         <button data-aralik="hafta" class="active">Hafta</button>
         <button data-aralik="ay">Ay</button>
@@ -96,6 +97,28 @@
   </section>
 
 </main>
+
+<footer class="alt-bant">
+  <p>Halveri<span class="c-ust">©</span> bir <strong>Depom.app<span class="c-ust">©</span></strong> ürünüdür — <button type="button" id="yasalAcBtn" class="yasal-link">Yasal</button> · Copyright 2024 Tüm Hakları Saklıdır.</p>
+</footer>
+
+<div id="yasalModal" class="modal-ortu" style="display:none">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="yasalBaslik">
+    <h2 id="yasalBaslik">Yasal Bilgilendirme</h2>
+    <div class="modal-govde">
+      <p>DepomApp Halveri uygulama verilerini belediye hal ilanı kaynaklarından almaktadır.</p>
+      <p>Eğer Halveri Uygulamasını kullanıyorsanız bir DepomApp üyesisiniz.</p>
+      <p class="modal-alt-baslik">DepomApp Kullanım ve Aracılık Koşulları</p>
+      <p>DepomApp, alıcı ve satıcıları bir araya getiren bir platformdur; satışlara taraf olmaz, malın mülkiyetini hiçbir aşamada üstlenmez ve ödeme akışına aracılık etmez.</p>
+      <p>Kullanıcı, sisteme girdiği ÇKS bilgilerinin kendisine ait olduğunu ve resmi belgelerle desteklendiğini beyan eder. Yanlış veya başkasına ait bilgilerle yapılan işlemlerden doğacak sorumluluk kullanıcıya aittir.</p>
+      <p>Platform üzerinden gerçekleştirilen satışlarda iade süreci işletilmez; alıcı, malı teslim alım anında kontrol etmekle yükümlüdür.</p>
+      <p>Şirketimiz, sahte veya mükerrer hesapları önceden bildirimde bulunmaksızın kapatma hakkını saklı tutar.</p>
+      <p>Doğrulanmış Üretici Rozeti bedeli yalnızca ilk satış gerçekleştikten sonra tahsil edilir. Platform komisyon almaz.</p>
+      <p class="modal-not">Bu metnin tamamını okumadan da Anladım butonuna basarak veya pencerenin dışına dokunarak kapatabilirsiniz.</p>
+    </div>
+    <button type="button" id="yasalAnladimBtn" class="bant-btn bant-btn-vurgulu modal-btn">Anladım</button>
+  </div>
+</div>
 
 <script src="config.js"></script>
 <script src="products.js"></script>

@@ -217,7 +217,7 @@ async function grafigiCiz() {
     return;
   }
   if (seciliIller.length === 0 && !turkiyeGeneli) {
-    kutu.innerHTML = `<p class="grafik-bos">Üstteki banttan en az bir il ya da "Türkiye geneli" seç.</p>`;
+    kutu.innerHTML = `<p class="grafik-bos">Kişisel ayarlardan en az bir il ya da "Türkiye geneli" seçiniz.</p>`;
     return;
   }
   if (!document.getElementById("canliGrafik")) {
@@ -317,7 +317,7 @@ async function tabloCiz() {
     return;
   }
   if (seciliIller.length === 0 && !turkiyeGeneli) {
-    tablo.innerHTML = `<tr><td colspan="4">Üstteki banttan en az bir il ya da "Türkiye geneli" seç.</td></tr>`;
+    tablo.innerHTML = `<tr><td colspan="4">Kişisel ayarlardan en az bir il ya da "Türkiye geneli" seçiniz.</td></tr>`;
     return;
   }
 
@@ -367,5 +367,22 @@ document.getElementById("zamanSecim").addEventListener("click", (e) => {
 });
 
 document.getElementById("updateButton").addEventListener("click", herseyiCiz);
+
+// ============================================
+// YASAL BİLGİLENDİRME MODALI
+// ============================================
+const yasalModal = document.getElementById("yasalModal");
+document.getElementById("yasalAcBtn").addEventListener("click", () => {
+  yasalModal.style.display = "flex";
+});
+document.getElementById("yasalAnladimBtn").addEventListener("click", () => {
+  yasalModal.style.display = "none";
+});
+yasalModal.addEventListener("click", (e) => {
+  if (e.target === yasalModal) yasalModal.style.display = "none";
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && yasalModal.style.display === "flex") yasalModal.style.display = "none";
+});
 
 herseyiCiz();
