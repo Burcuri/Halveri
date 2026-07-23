@@ -109,17 +109,27 @@ tbody tr:hover {
 
 /* KİŞİSELLEŞTİRME BANDI */
 .kisisel-bant{
-  max-width:900px; margin:0 auto 16px; padding:16px 20px;
-  background:white; border-radius:12px;
+  max-width:900px; margin:16px auto 0; padding:16px 20px;
+  background:#fff; border-radius:12px;
 }
+.il-bandi-baslik{ font-size:12px; color:#555; margin-bottom:10px; font-weight:600; }
+.il-bandi-satirlar{ display:flex; flex-wrap:wrap; gap:10px 18px; }
+.il-secenek-turkiye{ font-weight:600; }
+.il-etiket-notr{
+  font-size:10px; color:#1f6f43; background:white; border:1px solid #1f6f43;
+  padding:2px 6px; border-radius:6px; font-weight:600;
+}
+.kisisel-ayrac{ height:1px; background:#eee; margin:16px 0; }
+
 .takip-cipleri{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
 .takip-cip{
-  display:flex; align-items:center; gap:6px;
+  display:inline-flex; align-items:center; gap:6px;
   background:white; border:2px solid #ccc; border-radius:20px;
-  padding:6px 12px; font-size:13px; font-weight:600; cursor:pointer;
+  padding:6px 12px; font-size:13px; font-weight:600;
+  cursor:default; user-select:none;
 }
 .cip-nokta{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
-.cip-kaldir{ margin-left:4px; font-weight:400; opacity:0.6; padding:0 2px; }
+.cip-kaldir{ margin-left:4px; font-weight:400; opacity:0.6; padding:0 2px; cursor:pointer; }
 .cip-kaldir:hover{ opacity:1; }
 
 .urun-ekle-btn{
@@ -162,3 +172,5 @@ tbody tr:hover {
   .grafik-kutu{ height:260px; padding:10px; }
   .il-panel-satirlar{ gap:8px 14px; }
 }
+
+/* İl etiketleri (gösterge tipi rozeti) yukarıda .il-etiket-notr ile tanımlı */

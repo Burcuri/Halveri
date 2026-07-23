@@ -15,6 +15,21 @@
   <button id="updateButton">Verileri Güncelle</button>
 </header>
 
+<!-- KİŞİSELLEŞTİRME BANDI — il seçimi + takip edilen ürün tipleri, tek yerde -->
+<section class="kisisel-bant">
+  <div class="il-bandi-baslik">📍 Takip ettiğin iller (en fazla 4) — seçim sırası gösterge tipini belirler</div>
+  <div class="il-bandi-satirlar" id="ilBandiSatirlari"></div>
+
+  <div class="kisisel-ayrac"></div>
+
+  <div class="il-bandi-baslik">🍅 Takip ettiğin ürün tipleri</div>
+  <div id="takipCipleri" class="takip-cipleri"></div>
+  <button id="urunEkleBtn" class="urun-ekle-btn">+ Ürün Ekle</button>
+  <div id="urunEklePanel" class="urun-ekle-panel" style="display:none">
+    <div id="katalogListesi"></div>
+  </div>
+</section>
+
 <!-- SPONSOR -->
 <div class="sponsor">
   <span class="sponsor-icon">🚜</span>
@@ -23,20 +38,6 @@
     <strong>LOREM IPSUM TARIM MAKİNALARI</strong>
   </div>
 </div>
-
-<!-- KİŞİSELLEŞTİRME BANDI -->
-<section class="kisisel-bant">
-  <div id="takipCipleri" class="takip-cipleri"></div>
-  <button id="urunEkleBtn" class="urun-ekle-btn">+ Ürün Ekle</button>
-
-  <!-- Ürün ekleme paneli (katalog) -->
-  <div id="urunEklePanel" class="urun-ekle-panel" style="display:none">
-    <div id="katalogListesi"></div>
-  </div>
-
-  <!-- Seçili bir cip'e tıklanınca açılan il/Türkiye paneli -->
-  <div id="ilSecimPanel" class="il-secim-panel" style="display:none"></div>
-</section>
 
 <!-- CANLI GRAFİK -->
 <section class="canli-grafik-bolumu">
