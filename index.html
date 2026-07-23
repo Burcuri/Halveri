@@ -4,80 +4,98 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Türkiye Hal Fiyatları</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,560;9..144,650&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Emoji:wght@400..700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<header>
-  <h1>Türkiye Hal Fiyatları</h1>
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="brand-muhur" aria-hidden="true">H</span>
+      <div class="brand-text">
+        <h1>Türkiye Hal Fiyatları</h1>
+        <p class="brand-etiket">Şehir şehir, gün gün — yaş sebze &amp; meyve borsası</p>
+      </div>
+    </div>
+  </div>
 </header>
 
-<!-- KİŞİSELLEŞTİRME BANDI — 3 buton yan yana -->
-<section class="kisisel-bant">
-  <div class="kisisel-satir">
-    <button id="illerBtn" class="bant-btn">📍 İller <span id="illerSayisi"></span></button>
-    <button id="urunEkleBtn" class="bant-btn bant-btn-vurgulu">+ Ürün Ekle</button>
-    <button id="updateButton" class="bant-btn">🔄 Verileri Güncelle</button>
+<main class="sayfa">
+
+  <!-- KİŞİSELLEŞTİRME BANDI -->
+  <section class="kisisel-bant">
+    <div class="kisisel-satir">
+      <button id="illerBtn" class="bant-btn"><span class="ikon">📍</span> İller <span id="illerSayisi" class="bant-sayac"></span></button>
+      <button id="urunEkleBtn" class="bant-btn bant-btn-vurgulu">+ Ürün Ekle</button>
+      <button id="updateButton" class="bant-btn"><span class="ikon">🔄</span> Verileri Güncelle</button>
+    </div>
+
+    <div id="illerPanel" class="dropdown-panel" style="display:none">
+      <div class="il-bandi-baslik">Takip ettiğin iller (en fazla 4) — seçim sırası gösterge tipini belirler</div>
+      <div class="il-bandi-satirlar" id="ilBandiSatirlari"></div>
+    </div>
+
+    <div id="urunEklePanel" class="dropdown-panel" style="display:none">
+      <div id="katalogListesi"></div>
+    </div>
+
+    <div id="takipCipleri" class="takip-cipleri"></div>
+  </section>
+
+  <!-- REKLAM BANDI -->
+  <div class="sponsor">
+    <span class="sponsor-muhur" aria-hidden="true">İlan</span>
+    <span class="sponsor-text">Lorem Ipsum Sponsorluk</span>
   </div>
 
-  <div id="illerPanel" class="dropdown-panel" style="display:none">
-    <div class="il-bandi-baslik">Takip ettiğin iller (en fazla 4) — seçim sırası gösterge tipini belirler</div>
-    <div class="il-bandi-satirlar" id="ilBandiSatirlari"></div>
-  </div>
+  <!-- CANLI GRAFİK -->
+  <section class="canli-grafik-bolumu">
+    <div class="grafik-baslik-satiri">
+      <span class="eyebrow">Canlı Seyir</span>
+      <div class="zaman-secim" id="zamanSecim">
+        <button data-aralik="hafta" class="active">Hafta</button>
+        <button data-aralik="ay">Ay</button>
+        <button data-aralik="yil">Yıl</button>
+      </div>
+    </div>
+    <div class="grafik-kutu">
+      <canvas id="canliGrafik"></canvas>
+    </div>
+  </section>
 
-  <div id="urunEklePanel" class="dropdown-panel" style="display:none">
-    <div id="katalogListesi"></div>
-  </div>
+  <section class="info">
+    <div>
+      <span class="info-etiket">Son Güncelleme</span>
+      <span class="info-deger" id="updateTime">—</span>
+    </div>
+    <span class="info-ayrac" aria-hidden="true"></span>
+    <div>
+      <span class="info-etiket">Takip Edilen Tip</span>
+      <span class="info-deger" id="productCount">0</span>
+    </div>
+  </section>
 
-  <div id="takipCipleri" class="takip-cipleri"></div>
-</section>
+  <section class="defter-bolumu">
+    <span class="eyebrow">Fiyat Defteri</span>
+    <table>
+      <thead>
+        <tr>
+          <th>Ürün</th>
+          <th>Hal (İl)</th>
+          <th>Min</th>
+          <th>Max</th>
+        </tr>
+      </thead>
+      <tbody id="priceTable"></tbody>
+    </table>
+  </section>
 
-<!-- REKLAM BANDI -->
-<div class="sponsor">
-  <span class="sponsor-icon">◆</span>
-  <span class="sponsor-text">Lorem Ipsum Sponsorluk</span>
-</div>
-
-<!-- CANLI GRAFİK -->
-<section class="canli-grafik-bolumu">
-  <div class="grafik-kutu">
-    <canvas id="canliGrafik"></canvas>
-  </div>
-  <div class="zaman-secim" id="zamanSecim">
-    <button data-aralik="hafta" class="active">Hafta</button>
-    <button data-aralik="ay">Ay</button>
-    <button data-aralik="yil">Yıl</button>
-  </div>
-</section>
-
-<section class="info">
-  <div>
-    Son Güncelleme
-    <br>
-    <span id="updateTime">-</span>
-  </div>
-  <div>
-    Takip Edilen Tip
-    <br>
-    <span id="productCount">0</span>
-  </div>
-</section>
-
-<section>
-  <table>
-    <thead>
-      <tr>
-        <th>Ürün</th>
-        <th>Hal (İl)</th>
-        <th>Min</th>
-        <th>Max</th>
-      </tr>
-    </thead>
-    <tbody id="priceTable"></tbody>
-  </table>
-</section>
+</main>
 
 <script src="config.js"></script>
 <script src="products.js"></script>

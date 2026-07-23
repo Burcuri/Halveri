@@ -152,7 +152,7 @@ function katalogCiz() {
   const kutu = document.getElementById("katalogListesi");
   kutu.innerHTML = Object.entries(URUN_KATALOG).map(([anaUrun, bilgi]) => `
     <div class="katalog-urun">
-      <div class="katalog-urun-baslik">${bilgi.emoji} ${anaUrun}</div>
+      <div class="katalog-urun-baslik"><span class="ikon">${bilgi.emoji}</span> ${anaUrun}</div>
       <div class="katalog-alt-tipler">
         ${bilgi.altTipler.map(altTip => {
           const secili = takipListesi.some(t => t.anaUrun === anaUrun && t.altTip === altTip);
@@ -213,11 +213,11 @@ async function grafigiCiz() {
   const kutu = document.querySelector(".grafik-kutu");
 
   if (takipListesi.length === 0) {
-    kutu.innerHTML = `<p style="text-align:center;color:#777;padding-top:140px">Henüz takip ettiğin bir ürün yok. "+ Ürün Ekle" ile başla.</p>`;
+    kutu.innerHTML = `<p class="grafik-bos">Henüz takip ettiğin bir ürün yok. "+ Ürün Ekle" ile başla.</p>`;
     return;
   }
   if (seciliIller.length === 0 && !turkiyeGeneli) {
-    kutu.innerHTML = `<p style="text-align:center;color:#777;padding-top:140px">Üstteki bantdan en az bir il ya da "Türkiye geneli" seç.</p>`;
+    kutu.innerHTML = `<p class="grafik-bos">Üstteki banttan en az bir il ya da "Türkiye geneli" seç.</p>`;
     return;
   }
   if (!document.getElementById("canliGrafik")) {
@@ -256,7 +256,7 @@ async function grafigiCiz() {
   const tarihler = [...tumTarihler].sort();
 
   if (tarihler.length === 0) {
-    kutu.innerHTML = `<p style="text-align:center;color:#777;padding-top:140px">Seçtiğin ürün/il kombinasyonları için bu aralıkta veri yok.</p>`;
+    kutu.innerHTML = `<p class="grafik-bos">Seçtiğin ürün/il kombinasyonları için bu aralıkta veri yok.</p>`;
     return;
   }
 
@@ -280,8 +280,25 @@ async function grafigiCiz() {
     data: { labels: etiketler, datasets },
     options: {
       responsive: true, maintainAspectRatio: false, animation: { duration: 250 },
-      plugins: { legend: { display: true, position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } } },
-      scales: { y: { ticks: { callback: v => v + " ₺" } } },
+      plugins: {
+        legend: {
+          display: true, position: "bottom",
+          labels: { boxWidth: 10, font: { size: 10, family: "'IBM Plex Mono', monospace" }, color: "#6B7A70" },
+        },
+      },
+      scales: {
+        x: {
+          grid: { color: "#EFE9D8" },
+          ticks: { font: { family: "'IBM Plex Mono', monospace", size: 10 }, color: "#6B7A70" },
+        },
+        y: {
+          grid: { color: "#EFE9D8" },
+          ticks: {
+            callback: v => v + " ₺",
+            font: { family: "'IBM Plex Mono', monospace", size: 10 }, color: "#6B7A70",
+          },
+        },
+      },
     },
   };
 
@@ -300,7 +317,7 @@ async function tabloCiz() {
     return;
   }
   if (seciliIller.length === 0 && !turkiyeGeneli) {
-    tablo.innerHTML = `<tr><td colspan="4">Üstteki bantdan en az bir il ya da "Türkiye geneli" seç.</td></tr>`;
+    tablo.innerHTML = `<tr><td colspan="4">Üstteki banttan en az bir il ya da "Türkiye geneli" seç.</td></tr>`;
     return;
   }
 
