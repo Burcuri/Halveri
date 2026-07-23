@@ -15,6 +15,13 @@ NOT (23.07.2026 güncellemesi):
     girip çerez (cookie) alıyoruz, sonra veri isteğini o
     oturumla (session) atıyoruz — normal bir tarayıcının yaptığı
     gibi.
+  - ÖNEMLİ DÜZELTME: Python'un standart .title() fonksiyonu
+    Türkçe "İ" ve "I" harflerini yanlış küçültüyor (görünmez
+    "nokta" karakterleri ekliyor / noktasız "ı" yerine noktalı
+    "i" kullanıyor). Bu yüzden "Biber Sivri" gibi isimler
+    Supabase'e görünüşte aynı ama aslında farklı bayt dizileriyle
+    yazılıyordu ve uygulama bunları hiç bulamıyordu. Artık
+    Türkçe'ye özel turkce_title() fonksiyonu kullanılıyor.
 
 Ortam değişkenleri (GitHub Actions secrets üzerinden gelecek):
     SUPABASE_URL
@@ -35,6 +42,25 @@ BASE_URL = "https://eislem.izmir.bel.tr/tr/HalFiyatlari/20/2"
 
 # Kategori (tip) değerleri — sitedeki dropdown sırasıyla eşleşiyor
 KATEGORILER = {1: "Sebze", 2: "Meyve", 3: "İthal"}
+
+# Python'un .title() fonksiyonu Türkçe İ/I harflerini bozuyor
+# (görünmez birleşik karakterler ekliyor / yanlış "ı" yerine "i" kullanıyor).
+# Bu yüzden Türkçe'ye özel bir title-case fonksiyonu kullanıyoruz.
+_TR_KUCUK = str.maketrans("İIŞĞÜÇÖ", "iışğüçö")
+_TR_BUYUK_TEK = {"i": "İ", "ı": "I", "ş": "Ş", "ğ": "Ğ", "ü": "Ü", "ç": "Ç", "ö": "Ö"}
+
+
+def turkce_title(metin: str) -> str:
+    kucuk = metin.translate(_TR_KUCUK).lower()
+    kelimeler = kucuk.split(" ")
+    sonuc = []
+    for k in kelimeler:
+        if not k:
+            sonuc.append(k)
+            continue
+        ilk = _TR_BUYUK_TEK.get(k[0], k[0].upper())
+        sonuc.append(ilk + k[1:])
+    return " ".join(sonuc)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -92,7 +118,7 @@ def kategori_verisini_cek(s: requests.Session, gun: date, tip: int) -> list[dict
             continue
         satirlar.append({
             "tarih": gun.isoformat(),
-            "urun": ad.title(),
+            "urun": turkce_title(ad),
             "il": "İzmir",
             "min_fiyat": min_f,
             "max_fiyat": max_f,
