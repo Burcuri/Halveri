@@ -11,11 +11,12 @@
 // yazımı kullanmaya dikkat et.
 // ============================================
 const URUN_KATALOG = {
-  "Domates":   { emoji: "🍅", altTipler: ["Genel", "Salkım", "Pembe", "Grill", "Beef", "Kokteyl", "Salçalık", "Cherry", "Sera"] },
-  "Biber":     { emoji: "🌶️", altTipler: ["Genel", "Dolma", "Sivri", "Çarliston", "Kapya", "Köybiberi"] },
+  "Domates":   { emoji: "🍅", altTipler: ["Genel", "Salkım", "Pembe", "Grill", "Beef", "Kokteyl", "Salçalık", "Cherry", "Sera", "Yumuşak"] },
+  "Biber":     { emoji: "🌶️", altTipler: ["Genel", "Dolma", "Sivri", "Çarliston", "Kapya", "Köybiberi", "Cin", "Kaliforniya Sarı"] },
   "Salatalık": { emoji: "🥒", altTipler: ["Genel", "Silor"] },
   "Patlıcan":  { emoji: "🍆", altTipler: ["Genel"] },
   "Karpuz":    { emoji: "🍉", altTipler: ["Genel"] },
+  "Kabak":     { emoji: "🥒", altTipler: ["Genel", "Beyaz", "Siyah"] },
 
   // --- Afyonkarahisar Belediyesi Toptancı Hal Müdürlüğü kataloğundan eklendi ---
   "Ananas":    { emoji: "🍍", altTipler: ["Genel", "İthal"] },
@@ -24,7 +25,7 @@ const URUN_KATALOG = {
   "Erik":      { emoji: "🍑", altTipler: ["Genel", "Anjelik"] },
   "Fasulye":   { emoji: "🫘", altTipler: ["Genel", "Ayşe"] },
   "Havuç":     { emoji: "🥕", altTipler: ["Genel", "Beypazarı", "İri (Takoz)"] },
-  "Limon":     { emoji: "🍋", altTipler: ["Genel", "Mayer", "Yatak"] },
+  "Limon":     { emoji: "🍋", altTipler: ["Genel", "Mayer", "Yatak", "Yeşil"] },
   "Marul":     { emoji: "🥬", altTipler: ["Genel", "Kıvırcık"] },
   "Muz":       { emoji: "🍌", altTipler: ["Genel", "Anamur", "İthal"] },
   "Patates":   { emoji: "🥔", altTipler: ["Genel", "Eski Mahsül", "Yeni Mahsül"] },
@@ -46,7 +47,6 @@ const URUN_KATALOG = {
   "Greyfurt":            { emoji: "🍊", altTipler: ["Genel"] },
   "Ispanak":             { emoji: "🥬", altTipler: ["Genel"] },
   "K.bahar":             { emoji: "🌿", altTipler: ["Genel"] },
-  "Kabak":               { emoji: "🥒", altTipler: ["Genel"] },
   "Kavun":               { emoji: "🍈", altTipler: ["Genel"] },
   "Kaysı":               { emoji: "🍑", altTipler: ["Genel"] },
   "Kestane":             { emoji: "🌰", altTipler: ["Genel"] },
@@ -66,6 +66,17 @@ const URUN_KATALOG = {
   "Tere":                { emoji: "🌿", altTipler: ["Genel"] },
   "Y.dünya":             { emoji: "🟡", altTipler: ["Genel"] },
   "Yeşil Soğan":         { emoji: "🌱", altTipler: ["Genel"] },
+
+  // --- Antalya / Alanya Hali'nden eklendi ---
+  "Topak Patlıcan":      { emoji: "🍆", altTipler: ["Genel"] },
+  "Sera Yeşil Muz":      { emoji: "🍌", altTipler: ["Genel"] },
+  "Açık Yeşil Muz":      { emoji: "🍌", altTipler: ["Genel"] },
+  "Sarı Yerli Muz":      { emoji: "🍌", altTipler: ["Genel"] },
+  "Patates Normal Kumpir": { emoji: "🥔", altTipler: ["Genel"] },
+  "Beyaz Lahana":        { emoji: "🥬", altTipler: ["Genel"] },
+  "Kiraz Napolyon":      { emoji: "🍒", altTipler: ["Genel"] },
+  "Mango":               { emoji: "🥭", altTipler: ["Genel"] },
+  "Yaban Mersini":       { emoji: "🫐", altTipler: ["Genel"] },
 };
 
 // Supabase'deki 'urun' kolonuna karşılık gelen tam ad.
