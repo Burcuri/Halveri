@@ -148,7 +148,7 @@ function tipCikar(anaUrun, altTip) {
 }
 
 function ilAdiBul(id) { return (ILLER.find(x => x.id === id) || {}).ad || id; }
-function gostergeAdi(tip) { return { cizgi: "Çizgi", geometrik: "Geometrik", nokta: "Nokta", kolon: "Kolon" }[tip] || ""; }
+function gostergeAdi(tip) { return { cizgi: "Koyu ton", geometrik: "Orta ton", nokta: "Açık ton", kolon: "En açık ton" }[tip] || ""; }
 function hexRgba(colorStr, alpha) {
   if (colorStr.startsWith("rgb(")) return colorStr.replace("rgb(", "rgba(").replace(")", `,${alpha})`);
   const r = parseInt(colorStr.slice(1, 3), 16), g = parseInt(colorStr.slice(3, 5), 16), b = parseInt(colorStr.slice(5, 7), 16);
@@ -363,15 +363,15 @@ async function grafigiCiz() {
       plugins: { legend: { display: false } }, // legend'i kendimiz çiziyoruz (aşağıda)
       scales: {
         x: {
-          grid: { color: "#EFE9D8" },
-          ticks: { font: { family: "'IBM Plex Mono', monospace", size: 10 }, color: "#6B7A70" },
+          grid: { color: "#1B2C22" },
+          ticks: { font: { family: "'IBM Plex Mono', monospace", size: 10 }, color: "#5C7566", maxTicksLimit: 10, autoSkip: true },
         },
         y: {
           position: "left",
-          grid: { color: "#EFE9D8" },
+          grid: { color: "#1B2C22" },
           ticks: {
             callback: v => v + " ₺",
-            font: { family: "'IBM Plex Mono', monospace", size: 10 }, color: "#6B7A70",
+            font: { family: "'IBM Plex Mono', monospace", size: 10 }, color: "#7FA88F", maxTicksLimit: 6,
           },
         },
         ...(referansAktifMi ? {

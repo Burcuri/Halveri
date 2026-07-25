@@ -233,15 +233,13 @@ function tonlaVer(hex, seviye) {
   return `rgb(${yeniR},${yeniG},${yeniB})`;
 }
 
-// İl seçim sırasına göre (0..3) gösterge tipi.
-const GOSTERGE_TIPLERI = ["cizgi", "geometrik", "nokta", "kolon"];
+// İl seçim sırasına göre (0..3) ton seviyesi adı (badge'de gösterilir).
+// NOT: Artık şekil DEĞİŞMİYOR — tüm ürün çizgileri tekdüze ince/düz çizgi.
+// İl ayrımı sadece renk tonuyla (tonlaVer) yapılıyor; bu isimler o tonu anlatır.
+const GOSTERGE_TIPLERI = ["cizgi", "geometrik", "nokta", "kolon"]; // dahili sıra anahtarları (isimler artık tona işaret ediyor)
 
-function gostergeAyari(tip) {
-  switch (tip) {
-    case "cizgi":     return { type: "line", tension: 0,   pointRadius: 2, borderWidth: 2,   fill: false, showLine: true };
-    case "geometrik": return { type: "line", tension: 0.5, pointRadius: 0, borderWidth: 2.5, fill: true,  showLine: true };
-    case "nokta":     return { type: "line", tension: 0,   pointRadius: 4, borderWidth: 0,   fill: false, showLine: false };
-    case "kolon":     return { type: "bar" };
-    default:          return { type: "line" };
-  }
+function gostergeAyari(_tip) {
+  // Referans mockup'taki gibi: tüm ürün×il çizgileri aynı ince, düz,
+  // noktasız, kesiksiz çizgi. Şekil değil, sadece renk/ton ayırt eder.
+  return { type: "line", tension: 0.3, pointRadius: 0, borderWidth: 1.8, fill: false, showLine: true };
 }
