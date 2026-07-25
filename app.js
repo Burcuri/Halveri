@@ -268,11 +268,13 @@ async function grafigiCiz() {
     kutu.innerHTML = `<p class="grafik-bos">Kişisel ayarlardan en az bir il ya da "Türkiye geneli" seçiniz.</p>`;
     return;
   }
-  if (!document.getElementById("canliGrafik")) {
+  if (!document.getElementById("grafikLegend")) {
     kutu.innerHTML = `
       <div class="grafik-canvas-alani"><canvas id="canliGrafik"></canvas></div>
       <div id="grafikLegend" class="grafik-legend"></div>`;
   }
+
+  try {
 
   const gunSayisi = { hafta: 7, ay: 30, yil: 365 }[aktifAralik];
   const tumTarihler = new Set();
@@ -401,6 +403,15 @@ async function grafigiCiz() {
     });
     legendEl.appendChild(item);
   });
+
+  } catch (hata) {
+    // Grafik çiziminde beklenmeyen bir hata olsa bile sayfanın geri kalanı
+    // (Fiyat Defteri, Son Güncelleme vb.) çalışmaya devam etsin diye
+    // hatayı burada yutuyoruz — sadece konsola yazıp kullanıcıya nazik bir
+    // mesaj gösteriyoruz.
+    console.error("Grafik çizilirken hata oluştu:", hata);
+    kutu.innerHTML = `<p class="grafik-bos">Grafik yüklenirken bir sorun oluştu. Sayfayı yenilemeyi dene.</p>`;
+  }
 }
 
 // ============================================
