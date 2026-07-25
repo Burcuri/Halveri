@@ -23,7 +23,7 @@ function ilBandiToggle(ilId) {
   if (idx >= 0) {
     seciliIller.splice(idx, 1);
   } else {
-    if (seciliIller.length >= 4) { alert("En fazla 4 il seçebilirsin."); return; }
+    if (seciliIller.length >= MAX_IL) { alert(`En fazla ${MAX_IL} il seçebilirsin.`); return; }
     seciliIller.push(ilId);
   }
   ilSecimKaydet();
@@ -35,6 +35,45 @@ function turkiyeGeneliToggle() {
   ilSecimKaydet();
   herseyiCiz();
 }
+
+// ============================================
+// REFERANS SERİLERİ (Enflasyon / Mazot) — açık/kapalı durumu
+// ============================================
+const REFERANS_STORAGE_KEY = "kisisel_referans_v1";
+let aktifReferanslar = [];
+try {
+  aktifReferanslar = JSON.parse(localStorage.getItem(REFERANS_STORAGE_KEY)) || [];
+} catch (e) { aktifReferanslar = []; }
+
+function referansKaydet() {
+  localStorage.setItem(REFERANS_STORAGE_KEY, JSON.stringify(aktifReferanslar));
+}
+
+function referansToggle(id) {
+  const idx = aktifReferanslar.indexOf(id);
+  if (idx >= 0) aktifReferanslar.splice(idx, 1);
+  else aktifReferanslar.push(id);
+  referansKaydet();
+  herseyiCiz();
+}
+
+function referansPanelCiz() {
+  const kutu = document.getElementById("referansSatirlari");
+  if (!kutu) return;
+  kutu.innerHTML = REFERANS_SERILER.map(r => `
+    <label class="il-secenek">
+      <input type="checkbox" data-referans="${r.id}" ${aktifReferanslar.includes(r.id) ? "checked" : ""}>
+      ${r.ad}
+    </label>`).join("");
+  kutu.querySelectorAll("[data-referans]").forEach(cb => {
+    cb.addEventListener("change", () => referansToggle(cb.dataset.referans));
+  });
+}
+
+document.getElementById("referansBtn")?.addEventListener("click", () => {
+  const panel = document.getElementById("referansPanel");
+  panel.style.display = (panel.style.display === "none") ? "block" : "none";
+});
 
 function ilBandiCiz() {
   document.getElementById("illerSayisi").textContent =
@@ -93,8 +132,8 @@ function bosRenkIndexBul() {
 
 function tipEkle(anaUrun, altTip) {
   if (takipListesi.some(t => t.anaUrun === anaUrun && t.altTip === altTip)) return;
-  if (takipListesi.length >= 6) {
-    alert("En fazla 6 ürün tipi takip edebilirsiniz.");
+  if (takipListesi.length >= MAX_URUN_TIPI) {
+    alert(`En fazla ${MAX_URUN_TIPI} ürün tipi takip edebilirsiniz.`);
     return;
   }
   takipListesi.push({ anaUrun, altTip, renkIndex: bosRenkIndexBul() });
@@ -203,6 +242,15 @@ async function veriGetirTurkiye(urunTam, gunSayisi) {
   })).sort((a, b) => a.tarih.localeCompare(b.tarih));
 }
 
+async function veriGetirReferans(tip, gunSayisi) {
+  const baslangic = new Date(Date.now() - gunSayisi * 86400000).toISOString().slice(0, 10);
+  const { data, error } = await supabaseClient
+    .from("referans_veriler").select("tarih, deger")
+    .eq("tip", tip).gte("tarih", baslangic).order("tarih");
+  if (error) { console.error(error); return []; }
+  return data;
+}
+
 // ============================================
 // CANLI GRAFİK — her ürün tipi × global seçili iller/Türkiye
 // ============================================
@@ -221,7 +269,9 @@ async function grafigiCiz() {
     return;
   }
   if (!document.getElementById("canliGrafik")) {
-    kutu.innerHTML = `<canvas id="canliGrafik"></canvas>`;
+    kutu.innerHTML = `
+      <div class="grafik-canvas-alani"><canvas id="canliGrafik"></canvas></div>
+      <div id="grafikLegend" class="grafik-legend"></div>`;
   }
 
   const gunSayisi = { hafta: 7, ay: 30, yil: 365 }[aktifAralik];
@@ -252,7 +302,19 @@ async function grafigiCiz() {
     }
   });
 
-  const sonuclar = await Promise.all(gorevler);
+  // Referans serileri (Enflasyon / Mazot) — ayrı tablo, ayrı (sağ) eksen
+  const referansGorevleri = aktifReferanslar.map(id => {
+    const tanim = REFERANS_SERILER.find(r => r.id === id);
+    return veriGetirReferans(tanim.tip, gunSayisi).then(satirlar => {
+      satirlar.forEach(s => tumTarihler.add(s.tarih));
+      return { referans: tanim, veri: satirlar };
+    });
+  });
+
+  const [sonuclar, referansSonuclari] = await Promise.all([
+    Promise.all(gorevler),
+    Promise.all(referansGorevleri),
+  ]);
   const tarihler = [...tumTarihler].sort();
 
   if (tarihler.length === 0) {
@@ -271,39 +333,74 @@ async function grafigiCiz() {
       label: sonuc.label, data: dizi, borderColor: sonuc.renk,
       backgroundColor: ayar.type === "bar" ? sonuc.renk : (ayar.fill ? hexRgba(sonuc.renk, 0.15) : sonuc.renk),
       borderDash: sonuc.turkiyeMi ? [6, 3] : undefined,
-      spanGaps: false, ...ayar,
+      spanGaps: false, yAxisID: "y", ...ayar,
     };
   });
+
+  // Referans dataset'leri: kalın, gri, sağ eksene bağlı, palet dışı
+  referansSonuclari.forEach(({ referans, veri }) => {
+    const veriMap = {};
+    veri.forEach(s => veriMap[s.tarih] = s.deger);
+    const dizi = tarihler.map(t => veriMap[t] ?? null);
+    datasets.push({
+      label: referans.ad, data: dizi, borderColor: referans.renk,
+      backgroundColor: referans.renk, borderWidth: 3, pointRadius: 0, tension: 0.2,
+      borderDash: referans.kesikli ? [6, 4] : undefined,
+      spanGaps: false, yAxisID: "y1", type: "line", fill: false, showLine: true,
+    });
+  });
+
+  const referansAktifMi = referansSonuclari.length > 0;
 
   const config = {
     type: "line",
     data: { labels: etiketler, datasets },
     options: {
       responsive: true, maintainAspectRatio: false, animation: { duration: 250 },
-      plugins: {
-        legend: {
-          display: true, position: "bottom",
-          labels: { boxWidth: 10, font: { size: 10, family: "'IBM Plex Mono', monospace" }, color: "#6B7A70" },
-        },
-      },
+      interaction: { mode: "nearest", intersect: false },
+      plugins: { legend: { display: false } }, // legend'i kendimiz çiziyoruz (aşağıda)
       scales: {
         x: {
           grid: { color: "#EFE9D8" },
           ticks: { font: { family: "'IBM Plex Mono', monospace", size: 10 }, color: "#6B7A70" },
         },
         y: {
+          position: "left",
           grid: { color: "#EFE9D8" },
           ticks: {
             callback: v => v + " ₺",
             font: { family: "'IBM Plex Mono', monospace", size: 10 }, color: "#6B7A70",
           },
         },
+        ...(referansAktifMi ? {
+          y1: {
+            position: "right",
+            grid: { display: false },
+            ticks: { font: { family: "'IBM Plex Mono', monospace", size: 10 }, color: "#8A8A85" },
+          },
+        } : {}),
       },
     },
   };
 
   if (canliChart) canliChart.destroy();
   canliChart = new Chart(document.getElementById("canliGrafik"), config);
+
+  // Özel legend — her satıra tıklayınca o seri aç/kapa
+  const legendEl = document.getElementById("grafikLegend");
+  legendEl.innerHTML = "";
+  datasets.forEach((ds, i) => {
+    const item = document.createElement("span");
+    item.className = "grafik-legend-ogesi";
+    item.innerHTML = `<span class="grafik-legend-cizgi" style="background:${ds.borderColor}"></span>${ds.label}`;
+    item.addEventListener("click", () => {
+      const meta = canliChart.getDatasetMeta(i);
+      meta.hidden = meta.hidden === null ? !canliChart.data.datasets[i].hidden : !meta.hidden;
+      item.classList.toggle("grafik-legend-sonuk", !!meta.hidden);
+      canliChart.update();
+    });
+    legendEl.appendChild(item);
+  });
 }
 
 // ============================================
@@ -353,6 +450,7 @@ async function tabloCiz() {
 // ============================================
 async function herseyiCiz() {
   ilBandiCiz();
+  referansPanelCiz();
   cipleriCiz();
   await grafigiCiz();
   await tabloCiz();

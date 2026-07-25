@@ -218,10 +218,26 @@ button{ font-family:'Inter', sans-serif; }
 .zaman-secim button[data-aralik="yil"].active{ background:var(--renk-patlican); border-color:var(--renk-patlican); }
 
 .grafik-kutu{
-  background:var(--kagit-panel); border:1px solid var(--cetvel); border-radius:var(--radius);
-  padding:18px; box-shadow:var(--golge);
-  height:340px; position:relative;
+  background:#0F1C16; border:1px solid #1F3328; border-radius:var(--radius);
+  padding:18px 20px; box-shadow:var(--golge);
+  min-height:340px; position:relative;
+  display:flex; flex-direction:column;
 }
+.grafik-canvas-alani{ width:100%; height:300px; position:relative; }
+
+.grafik-legend{
+  display:flex; flex-wrap:wrap; gap:8px 16px;
+  margin-top:14px; padding-top:12px; border-top:1px solid #1B2C22;
+}
+.grafik-legend-ogesi{
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:'IBM Plex Mono', monospace; font-size:10.5px;
+  color:#9FB8A8; cursor:pointer; user-select:none;
+  transition:opacity .15s ease;
+}
+.grafik-legend-ogesi:hover{ color:#C9DCCB; }
+.grafik-legend-cizgi{ width:10px; height:3px; display:inline-block; border-radius:2px; flex-shrink:0; }
+.grafik-legend-sonuk{ opacity:0.35; }
 
 /* ============ INFO / TOPLAM ============ */
 .info{
@@ -273,7 +289,7 @@ tbody tr:last-child td{ border-bottom:none; }
 
 .grafik-bos{
   text-align:center; padding-top:130px; margin:0;
-  color:var(--murekkep-soluk); font-size:13.5px; line-height:1.6;
+  color:#7FA88F; font-size:13.5px; line-height:1.6;
 }
 
 /* ============ ALT BANT (FOOTER) ============ */
@@ -334,7 +350,8 @@ tbody tr:last-child td{ border-bottom:none; }
   .site-header{ padding:22px 16px; }
   .brand-text h1{ font-size:21px; }
   .sayfa{ padding:0 14px 32px; }
-  .grafik-kutu{ height:260px; padding:12px; }
+  .grafik-kutu{ min-height:260px; padding:12px; }
+  .grafik-canvas-alani{ height:220px; }
   .il-bandi-satirlar{ gap:8px 14px; }
   .info{ gap:14px; padding:16px; }
   .info div{ min-width:0; }

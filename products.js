@@ -85,6 +85,40 @@ function tamUrunAdi(anaUrun, altTip) {
 }
 
 // ============================================
+// SINIRLAR — çizgi sayısını okunabilir tutmak için.
+// 4 ürün tipi × 4 il = en fazla 16 çizgi + referans serileri.
+// (Eskiden ürün tipi sınırı 6'ydı, çok fazla çizgiye yol açtığı için 4'e indirildi.)
+// ============================================
+const MAX_URUN_TIPI = 4;
+const MAX_IL = 4;
+
+// ============================================
+// REFERANS SERİLERİ — ürün fiyatı değil, kıyas amaçlı seriler.
+// Ayrı bir Supabase tablosundan ('referans_veriler') gelir, farklı
+// birimleri olduğu için grafikte SAĞ (ikincil) eksene bağlanır.
+// Renk paletinden bağımsız, hep gri tonlarında ve kalın çizilir ki
+// ürün çizgilerinden görsel olarak ayrışsınlar.
+// ============================================
+const REFERANS_SERILER = [
+  {
+    id: "enflasyon",
+    ad: "Türkiye Enflasyon (%)",
+    tip: "enflasyon",       // referans_veriler tablosundaki 'tip' kolonu
+    birim: "%",
+    renk: "rgba(120,120,120,0.9)",
+    kesikli: false,
+  },
+  {
+    id: "mazot",
+    ad: "Mazot (TL/lt)",
+    tip: "mazot",
+    birim: "TL/lt",
+    renk: "rgba(120,120,120,0.55)",
+    kesikli: true,
+  },
+];
+
+// ============================================
 // İLLER — artık sabit renkleri yok, renk artık ürün tipine ait.
 // "ad" alanı Supabase'deki 'il' kolonuyla BİREBİR eşleşmeli.
 // Bazı büyükşehirlerde birden fazla hal olabildiği için (İstanbul'da
