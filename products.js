@@ -86,11 +86,11 @@ function tamUrunAdi(anaUrun, altTip) {
 
 // ============================================
 // SINIRLAR — çizgi sayısını okunabilir tutmak için.
-// 4 ürün tipi × 4 il = en fazla 16 çizgi + referans serileri.
-// (Eskiden ürün tipi sınırı 6'ydı, çok fazla çizgiye yol açtığı için 4'e indirildi.)
+// 3 ürün tipi × 3 il = en fazla 9 çizgi + 2 referans (enflasyon, mazot)
+// = en fazla 11 çizgi toplam.
 // ============================================
-const MAX_URUN_TIPI = 4;
-const MAX_IL = 4;
+const MAX_URUN_TIPI = 3;
+const MAX_IL = 3;
 
 // ============================================
 // REFERANS SERİLERİ — ürün fiyatı değil, kıyas amaçlı seriler.
@@ -236,7 +236,7 @@ function tonlaVer(hex, seviye) {
 // İl seçim sırasına göre (0..3) ton seviyesi adı (badge'de gösterilir).
 // NOT: Artık şekil DEĞİŞMİYOR — tüm ürün çizgileri tekdüze ince/düz çizgi.
 // İl ayrımı sadece renk tonuyla (tonlaVer) yapılıyor; bu isimler o tonu anlatır.
-const GOSTERGE_TIPLERI = ["cizgi", "geometrik", "nokta", "kolon"]; // dahili sıra anahtarları (isimler artık tona işaret ediyor)
+const GOSTERGE_TIPLERI = ["cizgi", "geometrik", "nokta"]; // dahili sıra anahtarları (isimler artık tona işaret ediyor)
 
 function gostergeAyari(_tip) {
   // Referans mockup'taki gibi: tüm ürün×il çizgileri aynı ince, düz,

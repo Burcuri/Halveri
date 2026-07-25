@@ -3,19 +3,21 @@
 // tüm takip edilen ürün tiplerine otomatik uygulanır.
 // İleride bu, ayrı bir login/hesap sisteminden gelecek;
 // şimdilik tarayıcıda saklıyoruz.
+//
+// NOT: "Türkiye geneli ortalaması" özelliği kaldırıldı — grafikte
+// sadece 3 il × 3 ürün (9 düz çizgi) + enflasyon/mazot (2 gri çizgi)
+// olacak şekilde sadeleştirildi, ekstra bir "ortalama" çizgisi yok.
 // ============================================
 const IL_STORAGE_KEY = "kisisel_iller_v1";
-let seciliIller = [];      // sıra = gösterge tipi sırası, en fazla 4
-let turkiyeGeneli = false;
+let seciliIller = [];      // sıra = gösterge tipi sırası, en fazla MAX_IL
 
 try {
   const kayit = JSON.parse(localStorage.getItem(IL_STORAGE_KEY)) || {};
-  seciliIller = kayit.iller || [];
-  turkiyeGeneli = kayit.turkiye || false;
-} catch (e) { seciliIller = []; turkiyeGeneli = false; }
+  seciliIller = (kayit.iller || []).slice(0, MAX_IL); // eski kayıtlar yeni sınıra kırpılır
+} catch (e) { seciliIller = []; }
 
 function ilSecimKaydet() {
-  localStorage.setItem(IL_STORAGE_KEY, JSON.stringify({ iller: seciliIller, turkiye: turkiyeGeneli }));
+  localStorage.setItem(IL_STORAGE_KEY, JSON.stringify({ iller: seciliIller }));
 }
 
 function ilBandiToggle(ilId) {
@@ -26,12 +28,6 @@ function ilBandiToggle(ilId) {
     if (seciliIller.length >= MAX_IL) { alert(`En fazla ${MAX_IL} il seçebilirsin.`); return; }
     seciliIller.push(ilId);
   }
-  ilSecimKaydet();
-  herseyiCiz();
-}
-
-function turkiyeGeneliToggle() {
-  turkiyeGeneli = !turkiyeGeneli;
   ilSecimKaydet();
   herseyiCiz();
 }
@@ -77,14 +73,10 @@ document.getElementById("referansBtn")?.addEventListener("click", () => {
 
 function ilBandiCiz() {
   document.getElementById("illerSayisi").textContent =
-    (seciliIller.length + (turkiyeGeneli ? 1 : 0)) > 0 ? `(${seciliIller.length + (turkiyeGeneli ? 1 : 0)})` : "";
+    seciliIller.length > 0 ? `(${seciliIller.length})` : "";
 
   const kutu = document.getElementById("ilBandiSatirlari");
   kutu.innerHTML = `
-    <label class="il-secenek il-secenek-turkiye">
-      <input type="checkbox" data-aksiyon="turkiye" ${turkiyeGeneli ? "checked" : ""}>
-      Türkiye geneli ortalaması
-    </label>
     ${ILLER.map(il => {
       const seciliMi = seciliIller.includes(il.id);
       const sira = seciliIller.indexOf(il.id);
@@ -97,7 +89,6 @@ function ilBandiCiz() {
         </label>`;
     }).join("")}
   `;
-  kutu.querySelector('[data-aksiyon="turkiye"]').addEventListener("change", turkiyeGeneliToggle);
   kutu.querySelectorAll('[data-aksiyon="il"]').forEach(cb => {
     cb.addEventListener("change", () => ilBandiToggle(cb.dataset.il));
   });
@@ -115,9 +106,9 @@ document.getElementById("illerBtn").addEventListener("click", () => {
 const STORAGE_KEY = "kisisel_takip_v1";
 let takipListesi = [];
 try {
-  takipListesi = (JSON.parse(localStorage.getItem(STORAGE_KEY)) || []).map(t => ({
-    anaUrun: t.anaUrun, altTip: t.altTip, renkIndex: t.renkIndex,
-  }));
+  takipListesi = (JSON.parse(localStorage.getItem(STORAGE_KEY)) || [])
+    .map(t => ({ anaUrun: t.anaUrun, altTip: t.altTip, renkIndex: t.renkIndex }))
+    .slice(0, MAX_URUN_TIPI); // eski kayıtlar yeni sınıra kırpılır
 } catch (e) { takipListesi = []; }
 
 function kaydet() {
@@ -148,7 +139,7 @@ function tipCikar(anaUrun, altTip) {
 }
 
 function ilAdiBul(id) { return (ILLER.find(x => x.id === id) || {}).ad || id; }
-function gostergeAdi(tip) { return { cizgi: "Koyu ton", geometrik: "Orta ton", nokta: "Açık ton", kolon: "En açık ton" }[tip] || ""; }
+function gostergeAdi(tip) { return { cizgi: "Koyu ton", geometrik: "Orta ton", nokta: "Açık ton" }[tip] || ""; }
 function hexRgba(colorStr, alpha) {
   if (colorStr.startsWith("rgb(")) return colorStr.replace("rgb(", "rgba(").replace(")", `,${alpha})`);
   const r = parseInt(colorStr.slice(1, 3), 16), g = parseInt(colorStr.slice(3, 5), 16), b = parseInt(colorStr.slice(5, 7), 16);
@@ -227,21 +218,6 @@ async function veriGetirIl(urunTam, ilAdi, gunSayisi) {
   return data;
 }
 
-async function veriGetirTurkiye(urunTam, gunSayisi) {
-  const baslangic = new Date(Date.now() - gunSayisi * 86400000).toISOString().slice(0, 10);
-  const { data, error } = await supabaseClient
-    .from("fiyatlar").select("tarih, il, min_fiyat, max_fiyat")
-    .eq("urun", urunTam).gte("tarih", baslangic).order("tarih");
-  if (error) { console.error(error); return []; }
-  const gruplar = {};
-  data.forEach(r => { (gruplar[r.tarih] ||= []).push(r); });
-  return Object.entries(gruplar).map(([tarih, satirlar]) => ({
-    tarih,
-    min_fiyat: satirlar.reduce((s, x) => s + x.min_fiyat, 0) / satirlar.length,
-    max_fiyat: satirlar.reduce((s, x) => s + x.max_fiyat, 0) / satirlar.length,
-  })).sort((a, b) => a.tarih.localeCompare(b.tarih));
-}
-
 async function veriGetirReferans(tip, gunSayisi) {
   const baslangic = new Date(Date.now() - gunSayisi * 86400000).toISOString().slice(0, 10);
   const { data, error } = await supabaseClient
@@ -264,8 +240,8 @@ async function grafigiCiz() {
     kutu.innerHTML = `<p class="grafik-bos">Henüz takip ettiğin bir ürün yok. "+ Ürün Ekle" ile başla.</p>`;
     return;
   }
-  if (seciliIller.length === 0 && !turkiyeGeneli) {
-    kutu.innerHTML = `<p class="grafik-bos">Kişisel ayarlardan en az bir il ya da "Türkiye geneli" seçiniz.</p>`;
+  if (seciliIller.length === 0) {
+    kutu.innerHTML = `<p class="grafik-bos">Kişisel ayarlardan en az bir il seçiniz.</p>`;
     return;
   }
   if (!document.getElementById("grafikLegend")) {
@@ -293,15 +269,6 @@ async function grafigiCiz() {
         })
       );
     });
-
-    if (turkiyeGeneli) {
-      gorevler.push(
-        veriGetirTurkiye(urunTam, gunSayisi).then(satirlar => {
-          satirlar.forEach(s => tumTarihler.add(s.tarih));
-          return { label: `${urunTam} — Türkiye Ort.`, renk, tip: "cizgi", veri: satirlar, turkiyeMi: true };
-        })
-      );
-    }
   });
 
   // Referans serileri (Enflasyon / Mazot) — ayrı tablo, ayrı (sağ) eksen
@@ -334,7 +301,6 @@ async function grafigiCiz() {
     return {
       label: sonuc.label, data: dizi, borderColor: sonuc.renk,
       backgroundColor: ayar.type === "bar" ? sonuc.renk : (ayar.fill ? hexRgba(sonuc.renk, 0.15) : sonuc.renk),
-      borderDash: sonuc.turkiyeMi ? [6, 3] : undefined,
       spanGaps: false, yAxisID: "y", ...ayar,
     };
   });
@@ -424,8 +390,8 @@ async function tabloCiz() {
     tablo.innerHTML = `<tr><td colspan="4">Henüz takip ettiğin bir ürün yok.</td></tr>`;
     return;
   }
-  if (seciliIller.length === 0 && !turkiyeGeneli) {
-    tablo.innerHTML = `<tr><td colspan="4">Kişisel ayarlardan en az bir il ya da "Türkiye geneli" seçiniz.</td></tr>`;
+  if (seciliIller.length === 0) {
+    tablo.innerHTML = `<tr><td colspan="4">Kişisel ayarlardan en az bir il seçiniz.</td></tr>`;
     return;
   }
 
@@ -440,13 +406,6 @@ async function tabloCiz() {
       satirlar.push(data && data.length > 0
         ? { urun: urunTam, il: ilAdi, min: data[0].min_fiyat, max: data[0].max_fiyat, tarih: data[0].tarih }
         : { urun: urunTam, il: ilAdi, min: "—", max: "—", tarih: null });
-    }
-    if (turkiyeGeneli) {
-      const tv = await veriGetirTurkiye(urunTam, 365);
-      if (tv.length > 0) {
-        const son = tv[tv.length - 1];
-        satirlar.push({ urun: urunTam, il: "Türkiye (ort.)", min: son.min_fiyat.toFixed(2), max: son.max_fiyat.toFixed(2), tarih: son.tarih });
-      }
     }
   }
 
