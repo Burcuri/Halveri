@@ -129,6 +129,9 @@ const ILLER = [
   // --- Veri girilmiş / girilmeye başlanmış iller (mevcut id'ler korunuyor) ---
   { id: "antalya",         ad: "Antalya" },
   { id: "antalya_alanya",  ad: "Antalya / Alanya" },
+  { id: "antalya_serik",   ad: "Antalya / Serik" },
+  { id: "antalya_gazipasa", ad: "Antalya / Gazipaşa" },
+  { id: "antalya_kas_finike", ad: "Antalya / Kaş-Finike" },
   { id: "istanbul",        ad: "İstanbul" },
   { id: "bursa",           ad: "Bursa" },
   { id: "izmir",           ad: "İzmir" },
