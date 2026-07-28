@@ -127,11 +127,13 @@ const REFERANS_SERILER = [
 // ============================================
 const ILLER = [
   // --- Veri girilmiş / girilmeye başlanmış iller (mevcut id'ler korunuyor) ---
+  { id: "turkiye_ort",     ad: "Türkiye Ortalaması" },
   { id: "antalya",         ad: "Antalya" },
   { id: "antalya_alanya",  ad: "Antalya / Alanya" },
   { id: "antalya_serik",   ad: "Antalya / Serik" },
   { id: "antalya_gazipasa", ad: "Antalya / Gazipaşa" },
   { id: "antalya_kas_finike", ad: "Antalya / Kaş-Finike" },
+  { id: "turkiye_ort",     ad: "Türkiye Ortalaması" },
   { id: "istanbul",        ad: "İstanbul" },
   { id: "bursa",           ad: "Bursa" },
   { id: "izmir",           ad: "İzmir" },
