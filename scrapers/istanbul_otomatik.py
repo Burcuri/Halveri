@@ -12,15 +12,18 @@ doğrudan HTML tablo dönüyor — çok daha stabil bir kaynak.
 
 KATEGORİ KODLARI BİLİNMİYOR: site dropdown'ında sadece "Meyve / Sebze /
 İthal Ürünler" var ama hangi sayının hangisine karşılık geldiğini
-bilmiyoruz (Sebze=6 olduğunu biliyoruz, diğerleri farklı/rastgele
-olabilir). Bu yüzden script 1'den 20'ye kadar tüm kategori kodlarını
-dener; geçerli bir tablo dönen her kodu kabul eder. Böylece elle hangi
-sayının ne olduğunu bulmaya gerek kalmadan tüm kategoriler kapsanmış
-olur (aynı ürün iki kategoride çıksa bile upsert sayesinde sorun olmaz).
+bilmiyoruz. Bu yüzden script 1'den 20'ye kadar tüm kategori kodlarını
+dener; geçerli bir tablo dönen her kodu kabul eder.
 
-TAKVİM: İzmir'de öğrendiğimiz derse göre, script varsayılan olarak
-"bugün" değil "DÜN" için veri çekiyor (günün verisi gün içinde henüz
-kesinleşmemiş olabiliyor).
+DÜZELTME (29-30.07.2026): Script haftalarca "başarılı" (yeşil tik)
+görünüp hiç veri yazmamıştı. Kök sebep incelendi: elle yapılan testlerde
+kategori=5'in GERÇEK veri döndürdüğü doğrulandı, ama script'in
+kullandığı "dün" tarihiyle sürekli boş sonuç alınıyordu — sunucunun
+'tarih' parametresini bazen görmezden gelip her zaman GÜNÜN verisini
+döndürdüğüne dair işaret var. Bu yüzden artık script önce BUGÜNÜ,
+o da boşsa DÜNÜ dener. Ayrıca — bu asıl önemli kısım — ikisi de boş
+dönerse artık SESSİZCE ÇIKMIYOR, hata koduyla çıkıyor ki GitHub
+Actions kırmızı yansın ve bir daha haftalarca fark edilmeden geçmesin.
 
 Ortam değişkenleri (GitHub Actions secrets üzerinden gelecek):
     SUPABASE_URL
@@ -104,8 +107,6 @@ def kategori_verisini_cek(s: requests.Session, gun: date, kategori: int) -> list
             "max_fiyat": max_f,
             "kaynak_url": "tarim.ibb.istanbul (Avrupa Yakası Hali, resmi)",
         })
-    if satirlar:
-        print(f"  [kategori {kategori}] {len(satirlar)} satır bulundu.")
     return satirlar
 
 
@@ -114,15 +115,21 @@ def gun_verisini_cek(gun: date) -> list[dict]:
     s.headers.update(HEADERS)
     tum_satirlar = []
     gorulen_urunler = set()
+    bos_kategori_sayisi = 0
     for kategori in KATEGORI_DENEME_ARALIGI:
-        for kategori_satirlari in [kategori_verisini_cek(s, gun, kategori)]:
-            for satir in kategori_satirlari:
-                anahtar = satir["urun"]
-                if anahtar in gorulen_urunler:
-                    continue  # aynı ürün başka bir kategori kodunda tekrar geldi
-                gorulen_urunler.add(anahtar)
-                tum_satirlar.append(satir)
+        kategori_satirlari = kategori_verisini_cek(s, gun, kategori)
+        if kategori_satirlari:
+            print(f"  [kategori {kategori}] {len(kategori_satirlari)} satır bulundu.")
+        else:
+            bos_kategori_sayisi += 1
+        for satir in kategori_satirlari:
+            anahtar = satir["urun"]
+            if anahtar in gorulen_urunler:
+                continue  # aynı ürün başka bir kategori kodunda tekrar geldi
+            gorulen_urunler.add(anahtar)
+            tum_satirlar.append(satir)
         time.sleep(0.3)  # siteye nazik davranalım
+    print(f"  ({gun}: {20 - bos_kategori_sayisi}/20 kategori dolu, {bos_kategori_sayisi}/20 boş)")
     return tum_satirlar
 
 
@@ -137,19 +144,28 @@ def supabaseye_yaz(satirlar: list[dict]) -> None:
 
 
 def main():
-    # Varsayılan: DÜN (İzmir'den öğrendiğimiz gibi, günün verisi gün
-    # içinde henüz kesinleşmemiş olabiliyor). Elle tarih verilirse onu kullanır.
-    gun = date.today() - timedelta(days=1)
     if len(sys.argv) > 1:
+        # Elle tarih verilmişse SADECE onu dener, fallback yok.
         gun = datetime.strptime(sys.argv[1], "%Y-%m-%d").date()
+        print(f"İstanbul (Avrupa Yakası) hal fiyatları çekiliyor: {gun} (elle belirtildi)")
+        satirlar = gun_verisini_cek(gun)
+    else:
+        # Önce BUGÜN, boşsa DÜN dene (bkz. dosya başındaki DÜZELTME notu).
+        denenecek_gunler = [date.today(), date.today() - timedelta(days=1)]
+        satirlar = []
+        for gun in denenecek_gunler:
+            print(f"İstanbul (Avrupa Yakası) hal fiyatları çekiliyor: {gun}")
+            satirlar = gun_verisini_cek(gun)
+            if satirlar:
+                break
+            print(f"  {gun} için hiç veri yok, bir sonraki tarih denenecek...")
 
-    print(f"İstanbul (Avrupa Yakası) hal fiyatları çekiliyor: {gun}")
-    satirlar = gun_verisini_cek(gun)
     print(f"TOPLAM {len(satirlar)} satır bulundu.")
 
     if not satirlar:
-        print("UYARI: Hiç satır bulunamadı. Çıkılıyor.")
-        return
+        # ARTIK SESSİZCE ÇIKMIYORUZ — hata koduyla çık ki Actions kırmızı yansın.
+        print("HATA: Denenen hiçbir tarihte/kategoride veri bulunamadı.")
+        sys.exit(1)
 
     supabaseye_yaz(satirlar)
     print("Supabase'e yazıldı (upsert — aynı gün tekrar çalışsa da sorun olmaz).")
@@ -157,3 +173,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
