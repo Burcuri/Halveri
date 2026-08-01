@@ -133,7 +133,6 @@ const ILLER = [
   { id: "antalya_serik",   ad: "Antalya / Serik" },
   { id: "antalya_gazipasa", ad: "Antalya / Gazipaşa" },
   { id: "antalya_kas_finike", ad: "Antalya / Kaş-Finike" },
-  { id: "turkiye_ort",     ad: "Türkiye Ortalaması" },
   { id: "istanbul",        ad: "İstanbul" },
   { id: "bursa",           ad: "Bursa" },
   { id: "izmir",           ad: "İzmir" },
