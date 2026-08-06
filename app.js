@@ -7,7 +7,7 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function halFiyatlariniGetir() {
     // HTML'de verileri yazdıracağın tablo gövdesi
-    const tabloGovdesi = document.getElementById('fiyat-tablosu');
+    const tabloGovdesi = document.getElementById('priceTable');
     
     if(!tabloGovdesi) return;
     
