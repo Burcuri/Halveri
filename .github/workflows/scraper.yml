@@ -1,0 +1,29 @@
+name: Gunluk Hal Fiyatlari Scraper
+
+on:
+  schedule:
+    # Her gün Türkiye saatiyle sabah 06:00'da çalışır (UTC 03:00)
+    - cron: '0 3 * * *'
+  workflow_dispatch: # GitHub üzerinden manuel olarak da tetikleyebilmeni sağlar
+
+jobs:
+  scrape-and-save:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Depoyu Klonla
+        uses: actions/checkout@v3
+
+      - name: Python Kur
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Gerekli Kütüphaneleri Yükle
+        run: pip install requests beautifulsoup4 supabase
+
+      - name: İBB Scraper'ı Çalıştır
+        env:
+          # GitHub Secrets'a ekleyeceğin Supabase bilgileri
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python scrapers/ibb_scraper.py
