@@ -3,7 +3,6 @@ import sys
 import requests
 from bs4 import BeautifulSoup
 from supabase import create_client, Client
-from datetime import datetime
 
 def get_supabase_client() -> Client:
     url = os.environ.get("SUPABASE_URL")
@@ -56,14 +55,11 @@ def ibb_fiyatlarini_cek():
                         "sehir": "İstanbul",
                         "urun_adi": urun_adi,
                         "en_dusuk": en_dusuk,
-                        "en_yuksek": en_yuksek,
-                        "tarih": datetime.now().strftime("%Y-%m-%d"),
-                        "kaynak": "İBB Avrupa Yakası"
+                        "en_yuksek": en_yuksek
                     })
 
     if not veriler:
         print("⚠️  Hiç veri bulunamadı. Site yapısı değişmiş olabilir.")
-        print("Sayfa başlığı:", soup.title.string if soup.title else "Yok")
         sys.exit(1)
 
     print(f"✅ {len(veriler)} ürün bulundu. Supabase'e yazılıyor...")
