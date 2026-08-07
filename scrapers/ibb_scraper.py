@@ -3,7 +3,7 @@ import sys
 import requests
 from bs4 import BeautifulSoup
 from supabase import create_client, Client
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def get_supabase_client() -> Client:
     url = os.environ.get("SUPABASE_URL")
@@ -15,28 +15,19 @@ def get_supabase_client() -> Client:
 
     return create_client(url, key)
 
-def ibb_fiyatlarini_cek():
-    bugun = datetime.now().strftime("%Y-%m-%d")
-    
-    # Kategoriler: 5=Meyve, 6=Sebze, 7=İthal
+def fiyat_cek(tarih: str, headers: dict) -> list:
     kategoriler = {
         "5": "Meyve",
         "6": "Sebze",
         "7": "İthal Ürünler"
     }
-
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept-Language": "tr-TR,tr;q=0.9",
-    }
-
     veriler = []
 
     for kategori_id, kategori_adi in kategoriler.items():
-        print(f"📡 {kategori_adi} çekiliyor... (tarih: {bugun})")
+        print(f"📡 {kategori_adi} çekiliyor... (tarih: {tarih})")
 
         params = {
-            "tarih": bugun,
+            "tarih": tarih,
             "kategori": kategori_id,
             "tUsr": "M3yV353bZe",
             "tPas": "LA74sBcXERpdBaz",
@@ -64,12 +55,12 @@ def ibb_fiyatlarini_cek():
             print(f"⚠️  {kategori_adi} için tablo bulunamadı.")
             continue
 
-        satirlar = tablo.find_all("tr")[1:]  # başlık satırını atla
+        satirlar = tablo.find_all("tr")[1:]
+        sayac = 0
         for satir in satirlar:
             sutunlar = satir.find_all("td")
             if len(sutunlar) >= 4:
                 urun_adi = sutunlar[0].get_text(strip=True)
-                # birim = sutunlar[1].get_text(strip=True)
                 en_dusuk = sutunlar[2].get_text(strip=True).replace("TL", "").strip()
                 en_yuksek = sutunlar[3].get_text(strip=True).replace("TL", "").strip()
 
@@ -80,8 +71,28 @@ def ibb_fiyatlarini_cek():
                         "en_dusuk": en_dusuk,
                         "en_yuksek": en_yuksek
                     })
+                    sayac += 1
 
-        print(f"✅ {kategori_adi}: {len(satirlar)} ürün eklendi.")
+        print(f"✅ {kategori_adi}: {sayac} ürün eklendi.")
+
+    return veriler
+
+def ibb_fiyatlarini_cek():
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "tr-TR,tr;q=0.9",
+    }
+
+    bugun = datetime.now().strftime("%Y-%m-%d")
+    dun = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    # Önce bugünü dene
+    veriler = fiyat_cek(bugun, headers)
+
+    # Bugün boşsa dünü dene
+    if not veriler:
+        print(f"\n⚠️  Bugün ({bugun}) veri yok, dünün verisi deneniyor...")
+        veriler = fiyat_cek(dun, headers)
 
     if not veriler:
         print("⚠️  Hiç veri bulunamadı.")
