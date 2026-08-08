@@ -69,7 +69,8 @@ def fiyat_cek(tarih: str, headers: dict) -> list:
                         "sehir": "İstanbul",
                         "urun_adi": urun_adi,
                         "en_dusuk": en_dusuk,
-                        "en_yuksek": en_yuksek
+                        "en_yuksek": en_yuksek,
+                        "tarih": tarih
                     })
                     sayac += 1
 
@@ -88,22 +89,28 @@ def ibb_fiyatlarini_cek():
 
     # Önce bugünü dene
     veriler = fiyat_cek(bugun, headers)
+    kullanilan_tarih = bugun
 
     # Bugün boşsa dünü dene
     if not veriler:
         print(f"\n⚠️  Bugün ({bugun}) veri yok, dünün verisi deneniyor...")
         veriler = fiyat_cek(dun, headers)
+        kullanilan_tarih = dun
 
     if not veriler:
         print("⚠️  Hiç veri bulunamadı.")
         sys.exit(1)
 
-    print(f"\n📦 Toplam {len(veriler)} ürün Supabase'e yazılıyor...")
+    print(f"\n📦 Toplam {len(veriler)} ürün Supabase'e yazılıyor... (tarih: {kullanilan_tarih})")
 
     try:
         supabase = get_supabase_client()
-        supabase.table("hal_fiyatlari").upsert(veriler).execute()
-        print(f"🎉 Başarılı! {len(veriler)} ürün kaydedildi.")
+        # urun_adi + sehir + tarih çakışırsa güncelle, eski günler kalsın
+        supabase.table("hal_fiyatlari").upsert(
+            veriler,
+            on_conflict="urun_adi,sehir,tarih"
+        ).execute()
+        print(f"🎉 Başarılı! {len(veriler)} ürün kaydedildi. ({kullanilan_tarih})")
     except Exception as e:
         print(f"❌ Supabase hatası: {e}")
         sys.exit(1)
