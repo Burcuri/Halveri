@@ -2,7 +2,6 @@ name: Gunluk Hal Fiyatlari Scraper
 
 on:
   schedule:
-    # Her gün Türkiye saatiyle sabah 06:00'da çalışır (UTC 03:00)
     - cron: '0 3 * * *'
   workflow_dispatch:
 
@@ -21,8 +20,14 @@ jobs:
       - name: Gerekli Kütüphaneleri Yükle
         run: pip install requests beautifulsoup4 supabase
 
-      - name: İBB Scraper'ı Çalıştır
+      - name: İstanbul (İBB) Scraper
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: python scrapers/ibb_scraper.py
+
+      - name: İzmir Scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python scrapers/izmir_scraper.py
