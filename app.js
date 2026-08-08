@@ -1,7 +1,6 @@
-// Global supabase (CDN'den yükleniyor)
-const supabaseUrl = 'https://dmhlysvzyxdgmtatshyc.supabase.co'
-const supabaseKey = 'sb_publishable_-f2M0WSqxpmUSmBFnkHYKg_xBt4FvAg'
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+const SUPABASE_URL = 'https://dmhlysvzyxdgmtatshyc.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_-f2M0WSqxpmUSmBFnkHYKg_xBt4FvAg'
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
 
 async function halFiyatlariniGetir() {
   const tabloGovdesi = document.getElementById('priceTable')
@@ -13,7 +12,7 @@ async function halFiyatlariniGetir() {
 
   tabloGovdesi.innerHTML = '<tr><td colspan="4">Veriler yükleniyor...</td></tr>'
 
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('hal_fiyatlari')
     .select('*')
     .order('urun_adi', { ascending: true })
@@ -32,7 +31,6 @@ async function halFiyatlariniGetir() {
     return
   }
 
-  // Tabloyu doldur (Ürün | Hal | Min | Max)
   tabloGovdesi.innerHTML = ''
   data.forEach(item => {
     const tr = document.createElement('tr')
@@ -45,23 +43,19 @@ async function halFiyatlariniGetir() {
     tabloGovdesi.appendChild(tr)
   })
 
-  // Bilgi alanları
   if (productCountEl) productCountEl.textContent = data.length
   if (updateTimeEl) {
-    const simdi = new Date()
-    updateTimeEl.textContent = simdi.toLocaleString('tr-TR', {
+    updateTimeEl.textContent = new Date().toLocaleString('tr-TR', {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit'
     })
   }
 
-  // Grafik alanındaki "Yükleniyor" yazısını kaldır
   if (grafikKutu) {
     grafikKutu.innerHTML = `<p class="grafik-bos">${data.length} ürün listelendi</p>`
   }
 }
 
-// Yasal modal
 document.addEventListener('DOMContentLoaded', () => {
   halFiyatlariniGetir()
 
@@ -81,11 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
-  // Güncelle butonu
   const updateBtn = document.getElementById('updateButton')
   if (updateBtn) {
-    updateBtn.addEventListener('click', () => {
-      halFiyatlariniGetir()
-    })
+    updateBtn.addEventListener('click', () => halFiyatlariniGetir())
   }
 })
