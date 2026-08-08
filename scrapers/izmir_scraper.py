@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import requests
 from supabase import create_client, Client
 from datetime import datetime, timedelta
@@ -12,7 +13,7 @@ def get_supabase_client() -> Client:
         sys.exit(1)
     return create_client(url, key)
 
-def izmir_fiyat_cek(tarih: str) -> list:
+def izmir_fiyat_cek(tarih: str, deneme: int = 3) -> list:
     url = f"https://openapi.izmir.bel.tr/api/ibb/halfiyatlari/sebzemeyve/{tarih}"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -20,18 +21,31 @@ def izmir_fiyat_cek(tarih: str) -> list:
     }
     print(f"📡 İzmir çekiliyor... (tarih: {tarih})")
 
-    try:
-        r = requests.get(url, headers=headers, timeout=30)
-        if r.status_code == 404 or not r.content:
-            print(f"⚠️  {tarih} için veri yok.")
-            return []
-        r.raise_for_status()
-        data = r.json()
-    except Exception as e:
-        print(f"❌ İzmir isteği başarısız: {e}")
+    for i in range(deneme):
+        try:
+            r = requests.get(url, headers=headers, timeout=30)
+            if r.status_code in (404, 204) or not r.content:
+                print(f"⚠️  {tarih} için veri yok (HTTP {r.status_code}).")
+                return []
+            if r.status_code >= 500:
+                print(f"⚠️  Sunucu hatası {r.status_code}, deneme {i+1}/{deneme}...")
+                time.sleep(2)
+                continue
+            r.raise_for_status()
+            data = r.json()
+            if isinstance(data, dict) and data.get("message"):
+                print(f"⚠️  API mesajı: {data.get('message')}")
+                time.sleep(2)
+                continue
+            break
+        except Exception as e:
+            print(f"❌ İstek hatası: {e} (deneme {i+1}/{deneme})")
+            time.sleep(2)
+            data = None
+    else:
         return []
 
-    liste = data.get("HalFiyatListesi") or []
+    liste = (data or {}).get("HalFiyatListesi") or []
     veriler = []
 
     for item in liste:
@@ -40,8 +54,6 @@ def izmir_fiyat_cek(tarih: str) -> list:
             continue
         en_dusuk = item.get("AsgariUcret")
         en_yuksek = item.get("AzamiUcret")
-
-        # Sayıyı metne çevir (İstanbul ile aynı format)
         en_dusuk_str = f"{en_dusuk:.2f}".replace(".", ",") if en_dusuk is not None else ""
         en_yuksek_str = f"{en_yuksek:.2f}".replace(".", ",") if en_yuksek is not None else ""
 
@@ -57,20 +69,23 @@ def izmir_fiyat_cek(tarih: str) -> list:
     return veriler
 
 def main():
-    bugun = datetime.now().strftime("%Y-%m-%d")
-    dun = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    bugun = datetime.now()
+    # Bugün + son 3 gün dene
+    tarihler = [(bugun - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(4)]
 
-    veriler = izmir_fiyat_cek(bugun)
-    kullanilan = bugun
+    veriler = []
+    kullanilan = None
+    for t in tarihler:
+        veriler = izmir_fiyat_cek(t)
+        if veriler:
+            kullanilan = t
+            break
+        print(f"⚠️  {t} boş, önceki gün deneniyor...")
 
     if not veriler:
-        print(f"\n⚠️  Bugün ({bugun}) veri yok, dün deneniyor...")
-        veriler = izmir_fiyat_cek(dun)
-        kullanilan = dun
-
-    if not veriler:
-        print("⚠️  İzmir için hiç veri bulunamadı.")
-        sys.exit(1)
+        print("⚠️  İzmir için hiç veri bulunamadı (API geçici kapalı olabilir).")
+        # Workflow'u düşürmesin — İstanbul kaydı kalsın
+        sys.exit(0)
 
     print(f"\n📦 Toplam {len(veriler)} İzmir ürünü yazılıyor... ({kullanilan})")
 
