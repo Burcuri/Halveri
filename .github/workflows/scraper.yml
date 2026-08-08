@@ -27,6 +27,7 @@ jobs:
         run: python scrapers/ibb_scraper.py
 
       - name: İzmir Scraper
+        continue-on-error: true
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
