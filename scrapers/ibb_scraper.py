@@ -84,18 +84,18 @@ def ibb_fiyatlarini_cek():
         "Accept-Language": "tr-TR,tr;q=0.9",
     }
 
-    bugun = datetime.now().strftime("%Y-%m-%d")
-    dun = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        bugun = datetime.now()
+    # Son 5 güne bak (erken saat / tatil / hafta sonu için)
+    tarihler = [(bugun - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(5)]
 
-    # Önce bugünü dene
-    veriler = fiyat_cek(bugun, headers)
-    kullanilan_tarih = bugun
-
-    # Bugün boşsa dünü dene
-    if not veriler:
-        print(f"\n⚠️  Bugün ({bugun}) veri yok, dünün verisi deneniyor...")
-        veriler = fiyat_cek(dun, headers)
-        kullanilan_tarih = dun
+    veriler = []
+    kullanilan_tarih = None
+    for t in tarihler:
+        veriler = fiyat_cek(t, headers)
+        if veriler:
+            kullanilan_tarih = t
+            break
+        print(f"⚠️  {t} boş, önceki gün deneniyor...")
 
     if not veriler:
         print("⚠️  Hiç veri bulunamadı.")
