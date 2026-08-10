@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from supabase import create_client, Client
 from datetime import datetime, timedelta
 
+
 def get_supabase_client() -> Client:
     url = os.environ.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_KEY")
@@ -14,6 +15,7 @@ def get_supabase_client() -> Client:
         sys.exit(1)
 
     return create_client(url, key)
+
 
 def fiyat_cek(tarih: str, headers: dict) -> list:
     kategoriler = {
@@ -78,13 +80,14 @@ def fiyat_cek(tarih: str, headers: dict) -> list:
 
     return veriler
 
+
 def ibb_fiyatlarini_cek():
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept-Language": "tr-TR,tr;q=0.9",
     }
 
-        bugun = datetime.now()
+    bugun = datetime.now()
     # Son 5 güne bak (erken saat / tatil / hafta sonu için)
     tarihler = [(bugun - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(5)]
 
@@ -105,7 +108,6 @@ def ibb_fiyatlarini_cek():
 
     try:
         supabase = get_supabase_client()
-        # urun_adi + sehir + tarih çakışırsa güncelle, eski günler kalsın
         supabase.table("hal_fiyatlari").upsert(
             veriler,
             on_conflict="urun_adi,sehir,tarih"
@@ -114,6 +116,7 @@ def ibb_fiyatlarini_cek():
     except Exception as e:
         print(f"❌ Supabase hatası: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     ibb_fiyatlarini_cek()
