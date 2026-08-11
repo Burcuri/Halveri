@@ -11,7 +11,6 @@ async function verileriYukle() {
     .from('hal_fiyatlari')
     .select('*')
     .order('tarih', { ascending: false })
-
   if (error) {
     console.error('Supabase hatası:', error)
     return null
@@ -21,7 +20,6 @@ async function verileriYukle() {
 
 function enSonTarih(veriler) {
   if (!veriler.length) return null
-  // tarih string veya Date olabilir
   const tarihler = veriler
     .map(v => v.tarih)
     .filter(Boolean)
@@ -30,18 +28,44 @@ function enSonTarih(veriler) {
   return tarihler[0] || null
 }
 
+// Son N gün içinde satır sayısı en yüksek olan günü seç
+// Gece yarısı tek şehir yazsa bile önceki dolu günü gösterir
+function enDoluGunuSec(tumVeriler, gunSayisi = 5) {
+  if (!tumVeriler || tumVeriler.length === 0) return null
+
+  const sayac = {}
+  for (const v of tumVeriler) {
+    if (!v.tarih) continue
+    const t = String(v.tarih).slice(0, 10)
+    sayac[t] = (sayac[t] || 0) + 1
+  }
+
+  const tarihler = Object.keys(sayac).sort().reverse()
+  const adaylar = tarihler.slice(0, gunSayisi)
+  if (adaylar.length === 0) return null
+
+  let best = adaylar[0]
+  let bestCount = sayac[best]
+  for (const t of adaylar) {
+    if (sayac[t] > bestCount) {
+      best = t
+      bestCount = sayac[t]
+    }
+  }
+  return best
+}
+
 function tabloyuDoldur(veriler) {
   const tbody = document.getElementById('priceTable')
   const updateTimeEl = document.getElementById('updateTime')
   const productCountEl = document.getElementById('productCount')
   if (!tbody) return
 
-  const sonTarih = enSonTarih(veriler)
+  const sonTarih = enDoluGunuSec(veriler, 5)
   const gunluk = sonTarih
-    ? veriler.filter(v => v.tarih === sonTarih)
+    ? veriler.filter(v => String(v.tarih).slice(0, 10) === sonTarih)
     : veriler
 
-  // Aynı ürün birden fazlaysa teke indir
   const map = new Map()
   gunluk.forEach(item => {
     const key = `${item.sehir}|${item.urun_adi}`
@@ -87,13 +111,10 @@ function aralikFiltrele(veriler, aralik) {
   const bugun = new Date()
   bugun.setHours(23, 59, 59, 999)
   let baslangic = new Date(bugun)
-
   if (aralik === 'hafta') baslangic.setDate(baslangic.getDate() - 7)
   else if (aralik === 'ay') baslangic.setMonth(baslangic.getMonth() - 1)
   else if (aralik === 'yil') baslangic.setFullYear(baslangic.getFullYear() - 1)
-
   const basStr = baslangic.toISOString().slice(0, 10)
-
   return veriler.filter(v => v.tarih && v.tarih >= basStr)
 }
 
@@ -107,7 +128,6 @@ function grafikCiz(veriler, aralik) {
     return
   }
 
-  // Günlük ortalama (min+max)/2 üzerinden
   const gunlukMap = {}
   filtreli.forEach(item => {
     const t = item.tarih
@@ -127,7 +147,6 @@ function grafikCiz(veriler, aralik) {
 
   kutu.innerHTML = '<canvas id="fiyatGrafik"></canvas>'
   const ctx = document.getElementById('fiyatGrafik')
-
   if (chartInstance) chartInstance.destroy()
 
   chartInstance = new Chart(ctx, {
@@ -162,8 +181,6 @@ function grafikCiz(veriler, aralik) {
       }
     }
   })
-
-  // Canvas yüksekliği
   ctx.parentElement.style.height = '280px'
 }
 
@@ -176,7 +193,6 @@ async function yenile() {
     if (tbody) tbody.innerHTML = '<tr><td colspan="4">Veriler yüklenemedi.</td></tr>'
     return
   }
-
   tabloyuDoldur(tumVeriler)
   grafikCiz(tumVeriler, seciliAralik)
 }
@@ -184,7 +200,6 @@ async function yenile() {
 document.addEventListener('DOMContentLoaded', () => {
   yenile()
 
-  // Zaman aralığı butonları
   const zamanSecim = document.getElementById('zamanSecim')
   if (zamanSecim) {
     zamanSecim.querySelectorAll('button').forEach(btn => {
@@ -197,11 +212,9 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
-  // Güncelle butonu
   const updateBtn = document.getElementById('updateButton')
   if (updateBtn) updateBtn.addEventListener('click', () => yenile())
 
-  // Yasal modal
   const yasalAcBtn = document.getElementById('yasalAcBtn')
   const yasalModal = document.getElementById('yasalModal')
   const yasalAnladimBtn = document.getElementById('yasalAnladimBtn')
