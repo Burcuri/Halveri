@@ -56,9 +56,8 @@ def konya_fiyat_cek(tarih_iso: str, deneme: int = 3) -> list:
             print(f"📡 Konya çekiliyor... (tarih: {tarih_iso}) deneme {i+1}/{deneme}")
             r = requests.get(url, params=params, headers=headers, timeout=30)
             if r.status_code >= 500:
-                print(f"⚠️  Sunucu {r.status_code}, tekrar / atlanıyor...")
-                time.sleep(2)
-                continue
+                print(f"⚠️  Sunucu {r.status_code}, bu tarih atlanıyor.")
+                return []
             r.raise_for_status()
             r.encoding = "utf-8"
             html = r.text
@@ -116,7 +115,7 @@ def konya_fiyat_cek(tarih_iso: str, deneme: int = 3) -> list:
 def main():
     bugun = datetime.now()
     # Son 7 gün (Konya bazı günlerde 500 verebiliyor)
-    tarihler = [(bugun - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
+    tarihler = [(bugun - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(3)]
 
     veriler = []
     kullanilan = None
