@@ -35,7 +35,39 @@ function normalizeUrun(ad) {
   if (URUN_ESLESMELER[t]) return URUN_ESLESMELER[t]
   return t
 }
+const URUN_ESLESMELER = {
+  'avakado': 'avokado',
+  'avacado': 'avokado',
+}
 
+// Listede görünecek doğru yazımlar
+const URUN_GOSTERIM = {
+  'avokado': 'Avokado',
+}
+
+function normalizeUrun(ad) {
+  let t = String(ad || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('tr')
+  t = t.replace(/[._]/g, ' ').replace(/\s+/g, ' ').trim()
+  if (URUN_ESLESMELER[t]) return URUN_ESLESMELER[t]
+  return t
+}
+
+function guzelUrunAdi(ad) {
+  const key = normalizeUrun(ad)
+  if (URUN_GOSTERIM[key]) return URUN_GOSTERIM[key]
+
+  const t = String(ad || '').trim().replace(/\s+/g, ' ')
+  if (!t) return '—'
+  if (t === t.toLocaleUpperCase('tr') && t.length > 1) {
+    return t
+      .toLocaleLowerCase('tr')
+      .replace(/(^|[\s(/])(\S)/g, (_, a, b) => a + b.toLocaleUpperCase('tr'))
+  }
+  return t
+}
 function guzelUrunAdi(ad) {
   const t = String(ad || '').trim().replace(/\s+/g, ' ')
   if (!t) return '—'
