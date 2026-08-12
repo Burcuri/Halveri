@@ -2,10 +2,20 @@ const SUPABASE_URL = 'https://dmhlysvzyxdgmtatshyc.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_-f2M0WSqxpmUSmBFnkHYKg_xBt4FvAg'
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
 
+const MAX_SEHIR = 3
+const RENKLER = [
+  '#1a5c3a', '#c45c26', '#2c6ebd', '#8b3a9e',
+  '#b8860b', '#c62828', '#00838f', '#6a1b9a',
+  '#558b2f', '#e65100'
+]
+
 let tumVeriler = []
 let chartInstance = null
 let seciliAralik = 'hafta'
+let seciliSehirler = []   // max 3
+let seciliUrunler = []    // serbest
 
+// ---------- veri ----------
 async function verileriYukle() {
   const { data, error } = await sb
     .from('hal_fiyatlari')
@@ -18,60 +28,150 @@ async function verileriYukle() {
   return data || []
 }
 
-function enSonTarih(veriler) {
-  if (!veriler.length) return null
-  const tarihler = veriler
-    .map(v => v.tarih)
-    .filter(Boolean)
-    .sort()
-    .reverse()
-  return tarihler[0] || null
+function fiyatSayi(str) {
+  if (!str) return null
+  const n = parseFloat(String(str).replace(',', '.').replace(/[^\d.]/g, ''))
+  return isNaN(n) ? null : n
 }
 
-function sehirBazliSonVeriler(tumVeriler) {
-  if (!tumVeriler || !tumVeriler.length) return { liste: [], sonTarih: null }
+function benzersiz(liste) {
+  return [...new Set(liste.filter(Boolean))].sort((a, b) =>
+    String(a).localeCompare(String(b), 'tr')
+  )
+}
 
-  const sonTarihMap = {}
-  for (const v of tumVeriler) {
-    if (!v.sehir || !v.tarih) continue
-    const t = String(v.tarih).slice(0, 10)
-    if (!sonTarihMap[v.sehir] || t > sonTarihMap[v.sehir]) {
-      sonTarihMap[v.sehir] = t
-    }
+// ---------- şehir paneli ----------
+function sehirleriDoldur() {
+  const kutu = document.getElementById('ilBandiSatirlari')
+  if (!kutu) return
+  const sehirler = benzersiz(tumVeriler.map(v => v.sehir))
+  if (!seciliSehirler.length) {
+    seciliSehirler = sehirler.slice(0, Math.min(MAX_SEHIR, sehirler.length))
+  }
+  kutu.innerHTML = sehirler.map(s => {
+    const checked = seciliSehirler.includes(s) ? 'checked' : ''
+    return `<label class="il-secim-satir">
+      <input type="checkbox" value="${s}" ${checked}> ${s}
+    </label>`
+  }).join('')
+
+  kutu.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        if (seciliSehirler.length >= MAX_SEHIR) {
+          cb.checked = false
+          alert(`En fazla ${MAX_SEHIR} şehir seçebilirsin.`)
+          return
+        }
+        seciliSehirler.push(cb.value)
+      } else {
+        seciliSehirler = seciliSehirler.filter(x => x !== cb.value)
+      }
+      sayaclariGuncelle()
+      tabloyuDoldur()
+      grafikCiz()
+    })
+  })
+  sayaclariGuncelle()
+}
+
+// ---------- ürün paneli ----------
+function urunleriDoldur() {
+  const kutu = document.getElementById('katalogListesi')
+  if (!kutu) return
+  const urunler = benzersiz(tumVeriler.map(v => v.urun_adi))
+  kutu.innerHTML = `
+    <input type="search" id="urunAra" placeholder="Ürün ara..." class="form-control" style="margin-bottom:8px;width:100%">
+    <div id="urunListeKutusu"></div>
+  `
+  const listeKutu = document.getElementById('urunListeKutusu')
+
+  function ciz(filtre = '') {
+    const f = filtre.toLocaleLowerCase('tr')
+    const goster = urunler.filter(u => !f || u.toLocaleLowerCase('tr').includes(f))
+    listeKutu.innerHTML = goster.slice(0, 80).map(u => {
+      const checked = seciliUrunler.includes(u) ? 'checked' : ''
+      return `<label class="il-secim-satir">
+        <input type="checkbox" value="${u}" ${checked}> ${u}
+      </label>`
+    }).join('') || '<p>Ürün yok</p>'
+
+    listeKutu.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        if (cb.checked) {
+          if (!seciliUrunler.includes(cb.value)) seciliUrunler.push(cb.value)
+        } else {
+          seciliUrunler = seciliUrunler.filter(x => x !== cb.value)
+        }
+        sayaclariGuncelle()
+        tabloyuDoldur()
+        grafikCiz()
+      })
+    })
   }
 
+  document.getElementById('urunAra').addEventListener('input', e => ciz(e.target.value))
+  ciz()
+  sayaclariGuncelle()
+}
+
+function sayaclariGuncelle() {
+  const el = document.getElementById('illerSayisi')
+  if (el) el.textContent = seciliSehirler.length ? `(${seciliSehirler.length})` : ''
+  const cip = document.getElementById('takipCipleri')
+  if (cip) {
+    const parcalar = [
+      ...seciliSehirler.map(s => `<span class="cip">${s}</span>`),
+      ...seciliUrunler.map(u => `<span class="cip cip-urun">${u}</span>`)
+    ]
+    cip.innerHTML = parcalar.join('') || '<span class="cip-bos">Şehir ve ürün seç</span>'
+  }
+}
+
+// ---------- tablo: seçili şehir (+ ürün) son verileri ----------
+function sehirBazliSonVeriler(kaynak) {
+  const sonTarihMap = {}
+  for (const v of kaynak) {
+    if (!v.sehir || !v.tarih) continue
+    const t = String(v.tarih).slice(0, 10)
+    if (!sonTarihMap[v.sehir] || t > sonTarihMap[v.sehir]) sonTarihMap[v.sehir] = t
+  }
   const sonuc = []
   const gorulen = new Set()
   let globalSon = null
-
-  for (const v of tumVeriler) {
+  for (const v of kaynak) {
     if (!v.sehir || !v.tarih) continue
     const t = String(v.tarih).slice(0, 10)
     if (t !== sonTarihMap[v.sehir]) continue
-
     const key = `${v.sehir}|${v.urun_adi}`
     if (gorulen.has(key)) continue
     gorulen.add(key)
     sonuc.push(v)
-
     if (!globalSon || t > globalSon) globalSon = t
   }
-
   sonuc.sort((a, b) => (a.urun_adi || '').localeCompare(b.urun_adi || '', 'tr'))
   return { liste: sonuc, sonTarih: globalSon }
 }
 
-function tabloyuDoldur(veriler) {
+function tabloyuDoldur() {
   const tbody = document.getElementById('priceTable')
   const updateTimeEl = document.getElementById('updateTime')
   const productCountEl = document.getElementById('productCount')
   if (!tbody) return
 
-  const { liste, sonTarih } = sehirBazliSonVeriler(veriler)
+  let kaynak = tumVeriler
+  if (seciliSehirler.length) {
+    kaynak = kaynak.filter(v => seciliSehirler.includes(v.sehir))
+  }
+  if (seciliUrunler.length) {
+    kaynak = kaynak.filter(v => seciliUrunler.includes(v.urun_adi))
+  }
+
+  const { liste, sonTarih } = sehirBazliSonVeriler(kaynak)
 
   tbody.innerHTML = ''
   if (!liste.length) {
-    tbody.innerHTML = '<tr><td colspan="4">Henüz veri yok.</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="4">Seçime uygun veri yok. Şehir / ürün seç.</td></tr>'
     if (productCountEl) productCountEl.textContent = '0'
     return
   }
@@ -91,53 +191,70 @@ function tabloyuDoldur(veriler) {
   if (updateTimeEl) {
     updateTimeEl.textContent = sonTarih
       ? new Date(sonTarih + 'T12:00:00').toLocaleDateString('tr-TR')
-      : new Date().toLocaleString('tr-TR')
+      : '—'
   }
 }
 
-function fiyatSayi(str) {
-  if (!str) return null
-  const n = parseFloat(String(str).replace(',', '.').replace(/[^\d.]/g, ''))
-  return isNaN(n) ? null : n
-}
-
-function aralikFiltrele(veriler, aralik) {
+// ---------- grafik: ürün × şehir serileri ----------
+function aralikBaslangic(aralik) {
   const bugun = new Date()
   bugun.setHours(23, 59, 59, 999)
-  let baslangic = new Date(bugun)
-  if (aralik === 'hafta') baslangic.setDate(baslangic.getDate() - 7)
-  else if (aralik === 'ay') baslangic.setMonth(baslangic.getMonth() - 1)
-  else if (aralik === 'yil') baslangic.setFullYear(baslangic.getFullYear() - 1)
-  const basStr = baslangic.toISOString().slice(0, 10)
-  return veriler.filter(v => v.tarih && v.tarih >= basStr)
+  const bas = new Date(bugun)
+  if (aralik === 'hafta') bas.setDate(bas.getDate() - 7)
+  else if (aralik === 'ay') bas.setMonth(bas.getMonth() - 1)
+  else if (aralik === 'yil') bas.setFullYear(bas.getFullYear() - 1)
+  return bas.toISOString().slice(0, 10)
 }
 
-function grafikCiz(veriler, aralik) {
+function grafikCiz() {
   const kutu = document.querySelector('.grafik-kutu')
   if (!kutu) return
 
-  const filtreli = aralikFiltrele(veriler, aralik)
-  if (!filtreli.length) {
-    kutu.innerHTML = '<p class="grafik-bos">Bu aralıkta veri yok</p>'
+  const sehirler = seciliSehirler.length
+    ? seciliSehirler
+    : benzersiz(tumVeriler.map(v => v.sehir)).slice(0, MAX_SEHIR)
+
+  const urunler = seciliUrunler.length
+    ? seciliUrunler
+    : benzersiz(tumVeriler.map(v => v.urun_adi)).slice(0, 3)
+
+  if (!sehirler.length || !urunler.length) {
+    kutu.innerHTML = '<p class="grafik-bos">Grafik için şehir ve ürün seç</p>'
     return
   }
 
-  const gunlukMap = {}
+  const basStr = aralikBaslangic(seciliAralik)
+  const filtreli = tumVeriler.filter(v =>
+    v.tarih &&
+    String(v.tarih).slice(0, 10) >= basStr &&
+    sehirler.includes(v.sehir) &&
+    urunler.includes(v.urun_adi)
+  )
+
+  if (!filtreli.length) {
+    kutu.innerHTML = '<p class="grafik-bos">Bu aralıkta seçili veri yok</p>'
+    return
+  }
+
+  // seri etiketi: "Armut · İstanbul"
+  const seriMap = {} // label -> { tarih -> ortalama }
+  const tumTarihler = new Set()
+
   filtreli.forEach(item => {
-    const t = item.tarih
+    const t = String(item.tarih).slice(0, 10)
     const min = fiyatSayi(item.en_dusuk)
     const max = fiyatSayi(item.en_yuksek)
     if (min == null && max == null) return
     const ort = min != null && max != null ? (min + max) / 2 : (min ?? max)
-    if (!gunlukMap[t]) gunlukMap[t] = { toplam: 0, adet: 0 }
-    gunlukMap[t].toplam += ort
-    gunlukMap[t].adet += 1
+    const label = `${item.urun_adi} · ${item.sehir}`
+    if (!seriMap[label]) seriMap[label] = {}
+    // aynı gün birden fazla kayıt olursa son yazılan
+    seriMap[label][t] = ort
+    tumTarihler.add(t)
   })
 
-  const tarihler = Object.keys(gunlukMap).sort()
-  const ortalamalar = tarihler.map(t =>
-    +(gunlukMap[t].toplam / gunlukMap[t].adet).toFixed(2)
-  )
+  const tarihler = [...tumTarihler].sort()
+  const labels = Object.keys(seriMap).sort((a, b) => a.localeCompare(b, 'tr'))
 
   kutu.innerHTML = '<canvas id="fiyatGrafik"></canvas>'
   const ctx = document.getElementById('fiyatGrafik')
@@ -151,19 +268,21 @@ function grafikCiz(veriler, aralik) {
           day: '2-digit', month: '2-digit'
         })
       ),
-      datasets: [{
-        label: 'Günlük ortalama fiyat (₺)',
-        data: ortalamalar,
-        borderColor: '#1a5c3a',
-        backgroundColor: 'rgba(26, 92, 58, 0.12)',
-        fill: true,
+      datasets: labels.map((label, i) => ({
+        label,
+        data: tarihler.map(t => seriMap[label][t] ?? null),
+        borderColor: RENKLER[i % RENKLER.length],
+        backgroundColor: 'transparent',
+        spanGaps: true,
         tension: 0.25,
-        pointRadius: 3
-      }]
+        pointRadius: 2,
+        borderWidth: 2
+      }))
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: { mode: 'nearest', intersect: false },
       plugins: {
         legend: { display: true, position: 'top' }
       },
@@ -175,9 +294,36 @@ function grafikCiz(veriler, aralik) {
       }
     }
   })
-  ctx.parentElement.style.height = '280px'
+  ctx.parentElement.style.height = '320px'
 }
 
+// ---------- paneller aç/kapa ----------
+function panelKur() {
+  const eslesme = [
+    ['illerBtn', 'illerPanel'],
+    ['urunEkleBtn', 'urunEklePanel'],
+    ['referansBtn', 'referansPanel']
+  ]
+  eslesme.forEach(([btnId, panelId]) => {
+    const btn = document.getElementById(btnId)
+    const panel = document.getElementById(panelId)
+    if (!btn || !panel) return
+    btn.addEventListener('click', e => {
+      e.stopPropagation()
+      const acik = panel.style.display === 'block'
+      document.querySelectorAll('.dropdown-panel').forEach(p => { p.style.display = 'none' })
+      panel.style.display = acik ? 'none' : 'block'
+    })
+  })
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.dropdown-panel').forEach(p => { p.style.display = 'none' })
+  })
+  document.querySelectorAll('.dropdown-panel').forEach(p => {
+    p.addEventListener('click', e => e.stopPropagation())
+  })
+}
+
+// ---------- yenile ----------
 async function yenile() {
   const tbody = document.getElementById('priceTable')
   if (tbody) tbody.innerHTML = '<tr><td colspan="4">Veriler yükleniyor...</td></tr>'
@@ -187,11 +333,15 @@ async function yenile() {
     if (tbody) tbody.innerHTML = '<tr><td colspan="4">Veriler yüklenemedi.</td></tr>'
     return
   }
-  tabloyuDoldur(tumVeriler)
-  grafikCiz(tumVeriler, seciliAralik)
+
+  sehirleriDoldur()
+  urunleriDoldur()
+  tabloyuDoldur()
+  grafikCiz()
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  panelKur()
   yenile()
 
   const zamanSecim = document.getElementById('zamanSecim')
@@ -201,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
         zamanSecim.querySelectorAll('button').forEach(b => b.classList.remove('active'))
         btn.classList.add('active')
         seciliAralik = btn.dataset.aralik || 'hafta'
-        if (tumVeriler.length) grafikCiz(tumVeriler, seciliAralik)
+        grafikCiz()
       })
     })
   }
