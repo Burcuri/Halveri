@@ -128,6 +128,26 @@ function sayaclariGuncelle() {
   }
 }
 
+function normalizeUrun(ad) {
+  return String(ad || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('tr')
+}
+
+// Gösterim için: ilk harfler düzenli
+function guzelUrunAdi(ad) {
+  const t = String(ad || '').trim().replace(/\s+/g, ' ')
+  if (!t) return '—'
+  // Tamamen büyükse title-case benzeri
+  if (t === t.toLocaleUpperCase('tr') && t.length > 1) {
+    return t
+      .toLocaleLowerCase('tr')
+      .replace(/(^|[\s(/])(\S)/g, (_, a, b) => a + b.toLocaleUpperCase('tr'))
+  }
+  return t
+}
+
 // ---------- tablo: seçili şehir (+ ürün) son verileri ----------
 function sehirBazliSonVeriler(kaynak) {
   const sonTarihMap = {}
