@@ -15,11 +15,25 @@ let seciliAralik = 'hafta'
 let seciliSehirler = []
 let seciliUrunler = [] // normalize edilmiş isimler
 
+// Bilinen yazım farkları → tek isim
+const URUN_ESLESMELER = {
+  'avakado': 'avokado',
+  'avacado': 'avokado',
+  'ahududu': 'ahududu',
+  'ağustos': 'ağustos',
+}
+
 function normalizeUrun(ad) {
-  return String(ad || '')
+  let t = String(ad || '')
     .trim()
     .replace(/\s+/g, ' ')
     .toLocaleLowerCase('tr')
+
+  // noktalama sadeleştir
+  t = t.replace(/[._]/g, ' ').replace(/\s+/g, ' ').trim()
+
+  if (URUN_ESLESMELER[t]) return URUN_ESLESMELER[t]
+  return t
 }
 
 function guzelUrunAdi(ad) {
