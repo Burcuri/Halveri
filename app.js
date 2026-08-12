@@ -15,23 +15,29 @@ let seciliAralik = 'hafta'
 let seciliSehirler = []
 let seciliUrunler = []
 
-// yanlis yazim -> dogru yazim
+// bilinen yazim duzeltmeleri (kelime veya tum ifade)
 const URUN_ESLESMELER = {
   'avakado': 'avokado',
-  'avacado': 'avokado'
+  'avacado': 'avokado',
+  'capia': 'kapya',
+  'kapia': 'kapya'
 }
 
-// listede gorunecek dogru isim
+// listede gorunecek guzel isimler
 const URUN_GOSTERIM = {
-  'avokado': 'Avokado'
+  'avokado': 'Avokado',
+  'biber kapya': 'Biber Kapya'
 }
 
 function normalizeUrun(ad) {
-  let t = String(ad || '')
-    .trim()
-    .replace(/\s+/g, ' ')
-    .toLocaleLowerCase('tr')
-  t = t.replace(/[._]/g, ' ').replace(/\s+/g, ' ').trim()
+  let t = String(ad || '').trim().toLocaleLowerCase('tr')
+  // parantez, noktalama, tire vb bosluk olsun
+  t = t.replace(/[()[\]{}:;,./\\|_+\-–—'"`´]/g, ' ')
+  t = t.replace(/\s+/g, ' ').trim()
+  // kelime kelime duzelt
+  t = t.split(' ').map(function (w) {
+    return URUN_ESLESMELER[w] || w
+  }).join(' ')
   if (URUN_ESLESMELER[t]) return URUN_ESLESMELER[t]
   return t
 }
@@ -39,15 +45,47 @@ function normalizeUrun(ad) {
 function guzelUrunAdi(ad) {
   const key = normalizeUrun(ad)
   if (URUN_GOSTERIM[key]) return URUN_GOSTERIM[key]
-
   const t = String(ad || '').trim().replace(/\s+/g, ' ')
   if (!t) return '—'
-  if (t === t.toLocaleUpperCase('tr') && t.length > 1) {
-    return t
-      .toLocaleLowerCase('tr')
-      .replace(/(^|[\s(/])(\S)/g, (_, a, b) => a + b.toLocaleUpperCase('tr'))
+  // normalize edilmis key'den guzel yazi uret
+  const n = key
+  if (!n) return t
+  return n.split(' ').map(function (w) {
+    if (!w) return w
+    return w.charAt(0).toLocaleUpperCase('tr') + w.slice(1)
+  }).join(' ')
+}
+
+function harfMesafesi(a, b) {
+  if (a === b) return 0
+  if (!a.length) return b.length
+  if (!b.length) return a.length
+  if (Math.abs(a.length - b.length) > 2) return 99
+  var prev = []
+  var cur = []
+  var j, i
+  for (j = 0; j <= b.length; j++) prev[j] = j
+  for (i = 1; i <= a.length; i++) {
+    cur[0] = i
+    for (j = 1; j <= b.length; j++) {
+      var cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1
+      cur[j] = Math.min(cur[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost)
+    }
+    prev = cur.slice()
   }
-  return t
+  return prev[b.length]
+}
+
+function urunAnahtariBul(ad, mevcutAnahtarlar) {
+  var n = normalizeUrun(ad)
+  if (mevcutAnahtarlar.indexOf(n) !== -1) return n
+  for (var i = 0; i < mevcutAnahtarlar.length; i++) {
+    var k = mevcutAnahtarlar[i]
+    if (Math.abs(k.length - n.length) > 2) continue
+    if (k.split(' ').length !== n.split(' ').length) continue
+    if (harfMesafesi(k, n) <= 1) return k
+  }
+  return n
 }
 
 async function verileriYukle() {
@@ -69,27 +107,25 @@ function fiyatSayi(str) {
 }
 
 function benzersiz(liste) {
-  return [...new Set(liste.filter(Boolean))].sort((a, b) =>
-    String(a).localeCompare(String(b), 'tr')
-  )
+  return [...new Set(liste.filter(Boolean))].sort(function (a, b) {
+    return String(a).localeCompare(String(b), 'tr')
+  })
 }
 
 function sehirleriDoldur() {
   const kutu = document.getElementById('ilBandiSatirlari')
   if (!kutu) return
-  const sehirler = benzersiz(tumVeriler.map(v => v.sehir))
+  const sehirler = benzersiz(tumVeriler.map(function (v) { return v.sehir }))
   if (!seciliSehirler.length) {
     seciliSehirler = sehirler.slice(0, Math.min(MAX_SEHIR, sehirler.length))
   }
-  kutu.innerHTML = sehirler.map(s => {
-    const checked = seciliSehirler.includes(s) ? 'checked' : ''
-    return `<label class="il-secim-satir">
-      <input type="checkbox" value="${s}" ${checked}> ${s}
-    </label>`
+  kutu.innerHTML = sehirler.map(function (s) {
+    const checked = seciliSehirler.indexOf(s) !== -1 ? 'checked' : ''
+    return '<label class="il-secim-satir"><input type="checkbox" value="' + s + '" ' + checked + '> ' + s + '</label>'
   }).join('')
 
-  kutu.querySelectorAll('input[type=checkbox]').forEach(cb => {
-    cb.addEventListener('change', () => {
+  kutu.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+    cb.addEventListener('change', function () {
       if (cb.checked) {
         if (seciliSehirler.length >= MAX_SEHIR) {
           cb.checked = false
@@ -98,7 +134,7 @@ function sehirleriDoldur() {
         }
         seciliSehirler.push(cb.value)
       } else {
-        seciliSehirler = seciliSehirler.filter(x => x !== cb.value)
+        seciliSehirler = seciliSehirler.filter(function (x) { return x !== cb.value })
       }
       sayaclariGuncelle()
       tabloyuDoldur()
@@ -113,14 +149,15 @@ function urunleriDoldur() {
   if (!kutu) return
 
   const map = new Map()
-  tumVeriler.forEach(v => {
+  tumVeriler.forEach(function (v) {
     if (!v.urun_adi) return
-    const key = normalizeUrun(v.urun_adi)
+    var anahtarlar = Array.from(map.keys())
+    var key = urunAnahtariBul(v.urun_adi, anahtarlar)
     if (!map.has(key)) map.set(key, v.urun_adi)
   })
-  const urunKayitlari = [...map.entries()].sort((a, b) =>
-    a[0].localeCompare(b[0], 'tr')
-  )
+  const urunKayitlari = Array.from(map.entries()).sort(function (a, b) {
+    return a[0].localeCompare(b[0], 'tr')
+  })
 
   kutu.innerHTML =
     '<input type="search" id="urunAra" placeholder="Urun ara..." style="margin-bottom:8px;width:100%;padding:8px 10px;border:1px solid #E1D9C4;border-radius:6px">' +
@@ -134,16 +171,13 @@ function urunleriDoldur() {
       var key = pair[0]
       var orj = pair[1]
       return !filtre || key.indexOf(filtre) !== -1 ||
-        orj.toLocaleLowerCase('tr').indexOf(filtre) !== -1
+        String(orj).toLocaleLowerCase('tr').indexOf(filtre) !== -1
     })
-    listeKutu.innerHTML = goster.slice(0, 100).map(function (pair) {
+    listeKutu.innerHTML = goster.slice(0, 120).map(function (pair) {
       var key = pair[0]
-      var orj = pair[1]
       var checked = seciliUrunler.indexOf(key) !== -1 ? 'checked' : ''
-      return '<label class="il-secim-satir">' +
-        '<input type="checkbox" value="' + key + '" ' + checked + '> ' +
-        guzelUrunAdi(orj) +
-        '</label>'
+      return '<label class="il-secim-satir"><input type="checkbox" value="' + key + '" ' + checked + '> ' +
+        guzelUrunAdi(key) + '</label>'
     }).join('') || '<p>Urun yok</p>'
 
     listeKutu.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
@@ -219,13 +253,22 @@ function tabloyuDoldur() {
   }
   if (seciliUrunler.length) {
     kaynak = kaynak.filter(function (v) {
-      return seciliUrunler.indexOf(normalizeUrun(v.urun_adi)) !== -1
+      // secili anahtar veya 1 harf yakin eslesme
+      var n = normalizeUrun(v.urun_adi)
+      for (var i = 0; i < seciliUrunler.length; i++) {
+        var s = seciliUrunler[i]
+        if (s === n) return true
+        if (Math.abs(s.length - n.length) <= 2 &&
+            s.split(' ').length === n.split(' ').length &&
+            harfMesafesi(s, n) <= 1) return true
+      }
+      return false
     })
   }
 
-  var sonuc = sehirBazliSonVeriler(kaynak)
-  var liste = sonuc.liste
-  var sonTarih = sonuc.sonTarih
+  var paket = sehirBazliSonVeriler(kaynak)
+  var liste = paket.liste
+  var sonTarih = paket.sonTarih
 
   tbody.innerHTML = ''
   if (!liste.length) {
@@ -272,12 +315,14 @@ function grafikCiz() {
 
   var urunler = seciliUrunler.slice()
   if (!urunler.length) {
-    var map = {}
+    var map = new Map()
     tumVeriler.forEach(function (v) {
       if (!v.urun_adi) return
-      map[normalizeUrun(v.urun_adi)] = true
+      var anahtarlar = Array.from(map.keys())
+      var key = urunAnahtariBul(v.urun_adi, anahtarlar)
+      if (!map.has(key)) map.set(key, true)
     })
-    urunler = Object.keys(map).slice(0, 3)
+    urunler = Array.from(map.keys()).slice(0, 3)
   }
 
   if (!sehirler.length || !urunler.length) {
@@ -287,10 +332,17 @@ function grafikCiz() {
 
   var basStr = aralikBaslangic(seciliAralik)
   var filtreli = tumVeriler.filter(function (v) {
-    return v.tarih &&
-      String(v.tarih).slice(0, 10) >= basStr &&
-      sehirler.indexOf(v.sehir) !== -1 &&
-      urunler.indexOf(normalizeUrun(v.urun_adi)) !== -1
+    if (!v.tarih || String(v.tarih).slice(0, 10) < basStr) return false
+    if (sehirler.indexOf(v.sehir) === -1) return false
+    var n = normalizeUrun(v.urun_adi)
+    for (var i = 0; i < urunler.length; i++) {
+      var s = urunler[i]
+      if (s === n) return true
+      if (Math.abs(s.length - n.length) <= 2 &&
+          s.split(' ').length === n.split(' ').length &&
+          harfMesafesi(s, n) <= 1) return true
+    }
+    return false
   })
 
   if (!filtreli.length) {
