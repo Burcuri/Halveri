@@ -357,3 +357,47 @@ tbody tr:last-child td{ border-bottom:none; }
   .info div{ min-width:0; }
   .info-deger{ font-size:21px; }
 }
+/* Seçim paneli — okunaklı grid */
+#ilBandiSatirlari,
+#urunListeKutusu {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px 12px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-top: 4px;
+}
+
+label.il-secim-satir {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  background: var(--kagit-panel);
+  border: 1px solid var(--cetvel);
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.3;
+  cursor: pointer;
+  white-space: normal;
+}
+
+label.il-secim-satir input {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+label.il-secim-satir:hover {
+  border-color: var(--orman);
+  background: #F1F6F1;
+}
+
+#urunAra {
+  margin-bottom: 10px !important;
+  padding: 8px 10px;
+  border: 1px solid var(--cetvel);
+  border-radius: 6px;
+  font-size: 13px;
+}
