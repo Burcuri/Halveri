@@ -15,42 +15,93 @@ let seciliAralik = 'hafta'
 let seciliSehirler = []
 let seciliUrunler = []
 
-// bilinen yazim duzeltmeleri (kelime veya tum ifade)
+// --- URUN ADI KURALLARI (hepsi burada) ---
+
+// tamamen yok sayilacak kelimeler
+const URUN_YOKSAY = [
+  'diger', 'diğer',
+  'muhtelif',
+  'cesitli', 'çeşitli',
+  'koy', 'köy',
+  'tarla',
+  'other'
+]
+
+// tek kelime / kisa ifade duzeltmeleri
 const URUN_ESLESMELER = {
   'avakado': 'avokado',
   'avacado': 'avokado',
   'capia': 'kapya',
-  'kapia': 'kapya'
+  'kapia': 'kapya',
+  'anjelik': 'anjelika',
+  'anjelıka': 'anjelika',
+  'ayse': 'ayse',
+  'incir': 'incir',
+  'ıncir': 'incir',
+  'incır': 'incir',
+  'ıncır': 'incir'
 }
 
-// listede gorunecek guzel isimler
+// listede gorunecek guzel isim
 const URUN_GOSTERIM = {
   'avokado': 'Avokado',
-  'biber kapya': 'Biber Kapya'
+  'biber kapya': 'Biber Kapya',
+  'armut santamaria': 'Armut Santamaria',
+  'elma granny smith': 'Elma Granny Smith',
+  'erik anjelika': 'Erik Anjelika',
+  'fasulye taze': 'Fasulye Taze',
+  'hindistan cevizi': 'Hindistan Cevizi',
+  'incir beyaz': 'İncir Beyaz'
 }
 
 function normalizeUrun(ad) {
   let t = String(ad || '').trim().toLocaleLowerCase('tr')
-  // parantez, noktalama, tire vb bosluk olsun
+
+  // parantez ve noktalama -> bosluk
   t = t.replace(/[()[\]{}:;,./\\|_+\-–—'"`´]/g, ' ')
   t = t.replace(/\s+/g, ' ').trim()
-  // kelime kelime duzelt
+
+  // ozel birlesikler (sira onemli)
+  t = t.replace(/\bs\s*mar[iı]a\b/g, 'santamaria')
+  t = t.replace(/\bsanta\s*mar[iı]a\b/g, 'santamaria')
+  t = t.replace(/\bsantamaria\b/g, 'santamaria')
+
+  // granny smith varyantlari
+  t = t.replace(/\bgrannysm[iı]th\b/g, 'granny smith')
+  t = t.replace(/\bgransimit\b/g, 'granny smith')
+  t = t.replace(/\bgsmit\b/g, 'granny smith')
+  t = t.replace(/\bgranny\s*smith\b/g, 'granny smith')
+  t = t.replace(/\bgranny\b/g, 'granny smith')
+
+  // hindistan cevizi varyant
+  t = t.replace(/\bh[iı]nd[iı]stan\s*cev[iı]z[iı]\b/g, 'hindistan cevizi')
+
+  // yok sayilacak kelimeleri at
+  t = t.split(' ').filter(function (w) {
+    return w && URUN_YOKSAY.indexOf(w) === -1
+  }).join(' ')
+
+  // kelime kelime esleme
   t = t.split(' ').map(function (w) {
     return URUN_ESLESMELER[w] || w
   }).join(' ')
+
+  // fasulye ayse / ayse kadin -> fasulye taze
+  if (t.indexOf('fasulye') === 0) {
+    if (t.indexOf('ayse') !== -1 || t.indexOf('kadın') !== -1 || t.indexOf('kadin') !== -1 || t === 'fasulye taze') {
+      t = 'fasulye taze'
+    }
+  }
+
   if (URUN_ESLESMELER[t]) return URUN_ESLESMELER[t]
   return t
 }
 
 function guzelUrunAdi(ad) {
-  const key = normalizeUrun(ad)
+  var key = normalizeUrun(ad)
   if (URUN_GOSTERIM[key]) return URUN_GOSTERIM[key]
-  const t = String(ad || '').trim().replace(/\s+/g, ' ')
-  if (!t) return '—'
-  // normalize edilmis key'den guzel yazi uret
-  const n = key
-  if (!n) return t
-  return n.split(' ').map(function (w) {
+  if (!key) return '—'
+  return key.split(' ').map(function (w) {
     if (!w) return w
     return w.charAt(0).toLocaleUpperCase('tr') + w.slice(1)
   }).join(' ')
@@ -61,9 +112,7 @@ function harfMesafesi(a, b) {
   if (!a.length) return b.length
   if (!b.length) return a.length
   if (Math.abs(a.length - b.length) > 2) return 99
-  var prev = []
-  var cur = []
-  var j, i
+  var prev = [], cur = [], i, j
   for (j = 0; j <= b.length; j++) prev[j] = j
   for (i = 1; i <= a.length; i++) {
     cur[0] = i
@@ -87,6 +136,17 @@ function urunAnahtariBul(ad, mevcutAnahtarlar) {
   }
   return n
 }
+
+function urunEslesiyorMu(seciliKey, hamAd) {
+  var n = normalizeUrun(hamAd)
+  if (seciliKey === n) return true
+  if (Math.abs(seciliKey.length - n.length) <= 2 &&
+      seciliKey.split(' ').length === n.split(' ').length &&
+      harfMesafesi(seciliKey, n) <= 1) return true
+  return false
+}
+
+// --- VERI / UI ---
 
 async function verileriYukle() {
   const { data, error } = await sb
@@ -169,9 +229,7 @@ function urunleriDoldur() {
     filtre = (filtre || '').toLocaleLowerCase('tr')
     const goster = urunKayitlari.filter(function (pair) {
       var key = pair[0]
-      var orj = pair[1]
-      return !filtre || key.indexOf(filtre) !== -1 ||
-        String(orj).toLocaleLowerCase('tr').indexOf(filtre) !== -1
+      return !filtre || key.indexOf(filtre) !== -1 || guzelUrunAdi(key).toLocaleLowerCase('tr').indexOf(filtre) !== -1
     })
     listeKutu.innerHTML = goster.slice(0, 120).map(function (pair) {
       var key = pair[0]
@@ -253,14 +311,8 @@ function tabloyuDoldur() {
   }
   if (seciliUrunler.length) {
     kaynak = kaynak.filter(function (v) {
-      // secili anahtar veya 1 harf yakin eslesme
-      var n = normalizeUrun(v.urun_adi)
       for (var i = 0; i < seciliUrunler.length; i++) {
-        var s = seciliUrunler[i]
-        if (s === n) return true
-        if (Math.abs(s.length - n.length) <= 2 &&
-            s.split(' ').length === n.split(' ').length &&
-            harfMesafesi(s, n) <= 1) return true
+        if (urunEslesiyorMu(seciliUrunler[i], v.urun_adi)) return true
       }
       return false
     })
@@ -318,8 +370,7 @@ function grafikCiz() {
     var map = new Map()
     tumVeriler.forEach(function (v) {
       if (!v.urun_adi) return
-      var anahtarlar = Array.from(map.keys())
-      var key = urunAnahtariBul(v.urun_adi, anahtarlar)
+      var key = urunAnahtariBul(v.urun_adi, Array.from(map.keys()))
       if (!map.has(key)) map.set(key, true)
     })
     urunler = Array.from(map.keys()).slice(0, 3)
@@ -334,13 +385,8 @@ function grafikCiz() {
   var filtreli = tumVeriler.filter(function (v) {
     if (!v.tarih || String(v.tarih).slice(0, 10) < basStr) return false
     if (sehirler.indexOf(v.sehir) === -1) return false
-    var n = normalizeUrun(v.urun_adi)
     for (var i = 0; i < urunler.length; i++) {
-      var s = urunler[i]
-      if (s === n) return true
-      if (Math.abs(s.length - n.length) <= 2 &&
-          s.split(' ').length === n.split(' ').length &&
-          harfMesafesi(s, n) <= 1) return true
+      if (urunEslesiyorMu(urunler[i], v.urun_adi)) return true
     }
     return false
   })
