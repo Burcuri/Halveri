@@ -17,10 +17,10 @@ let seciliUrunler = []
 
 const URUN_YOKSAY = [
   'diger', 'diğer', 'muhtelif', 'cesitli', 'çeşitli',
-  'koy', 'köy', 'tarla', 'other', 'aci', 'acı'
+  'koy', 'köy', 'tarla', 'other', 'aci', 'acı',
+  'iri' // "Havuc Beypazari Iri" -> Havuc Beypazari
 ]
 
-// son token bunlarsa kayit tamamen atilir
 const COP_SON_TOKEN = ['li', 'lı', 'l', 'i', 'ı']
 
 const URUN_ESLESMELER = {
@@ -33,7 +33,9 @@ const URUN_ESLESMELER = {
   'çarliston': 'carliston', 'carliston': 'carliston',
   'cherry': 'ceri', 'çeri': 'ceri', 'ceri': 'ceri',
   'cilek': 'cilek', 'cılek': 'cilek', 'çilek': 'cilek',
-  'incir': 'incir', 'ıncir': 'incir', 'incır': 'incir', 'ıncır': 'incir'
+  'incir': 'incir', 'ıncir': 'incir', 'incır': 'incir', 'ıncır': 'incir',
+  'starkıng': 'starking', 'starkin': 'starking', 'starking': 'starking',
+  'dereotu': 'dereotu', 'dere': 'dere'
 }
 
 const URUN_GOSTERIM = {
@@ -44,6 +46,7 @@ const URUN_GOSTERIM = {
   'biber carliston': 'Biber Çarliston',
   'armut santamaria': 'Armut Santamaria',
   'elma granny smith': 'Elma Granny Smith',
+  'elma starking': 'Elma Starking',
   'erik anjelika': 'Erik Anjelika',
   'can erik': 'Can Erik',
   'fasulye taze': 'Fasulye Taze',
@@ -52,7 +55,9 @@ const URUN_GOSTERIM = {
   'borulce': 'Börülce',
   'feslegen reyhan': 'Fesleğen Reyhan',
   'domates salkim ceri': 'Domates Salkım Çeri',
-  'cilek': 'Çilek'
+  'cilek': 'Çilek',
+  'dereotu': 'Dereotu',
+  'havuc beypazari': 'Havuç Beypazarı'
 }
 
 function copKayitMi(ad) {
@@ -77,12 +82,18 @@ function normalizeUrun(ad) {
   t = t.replace(/granny_smith(\s+smith)+/g, 'granny_smith')
   t = t.replace(/granny_smith/g, 'granny smith')
 
+  // dere otu -> dereotu
+  t = t.replace(/dere\s+otu/g, 'dereotu')
+
+  // starking
+  t = t.replace(/stark[iı]ng/g, 'starking')
+  t = t.replace(/starkin/g, 'starking')
+
   t = t.replace(/s\s*mar[iı]a/g, 'santamaria')
   t = t.replace(/santa\s*mar[iı]a/g, 'santamaria')
   t = t.replace(/h[iı]nd[iı]stan\s*cev[iı]z[iı]/g, 'hindistan cevizi')
   t = t.replace(/b[öo]ğ?r[üu]lce/g, 'borulce')
 
-  // ucburun - \\b kullanma (turkce harf)
   t = t.replace(/üç\s*burun/g, 'ucburun')
   t = t.replace(/uc\s*burun/g, 'ucburun')
   t = t.replace(/üçburun/g, 'ucburun')
@@ -96,6 +107,7 @@ function normalizeUrun(ad) {
   t = t.replace(/cılek/g, 'cilek')
   t = t.replace(/çilek/g, 'cilek')
 
+  // yok sayilacak kelimeler (iri dahil)
   t = t.split(' ').filter(function (w) {
     return w && URUN_YOKSAY.indexOf(w) === -1
   }).join(' ')
@@ -106,14 +118,20 @@ function normalizeUrun(ad) {
 
   if (t === 'erik') t = 'can erik'
 
+  // Domates Salkim (+ ceri isteğe bagli) -> domates salkim ceri
+  if (t.indexOf('domates') !== -1 && t.indexOf('salkim') !== -1) {
+    t = 'domates salkim ceri'
+  }
+  // sadece ceri olan domates de ayni gruba
+  if (t.indexOf('domates') !== -1 && t.indexOf('ceri') !== -1) {
+    t = 'domates salkim ceri'
+  }
+
   if (t.indexOf('biber') !== -1 && (t.indexOf('kil') !== -1 || t.indexOf('kıl') !== -1)) {
     t = 'biber kil sivri'
   }
   if (t === 'feslegen' || t === 'fesleğen' || t.indexOf('feslegen') === 0 || t.indexOf('fesleğen') === 0) {
     t = 'feslegen reyhan'
-  }
-  if (t.indexOf('domates') !== -1 && t.indexOf('ceri') !== -1) {
-    t = 'domates salkim ceri'
   }
   if (t.indexOf('fasulye') === 0) {
     if (t.indexOf('ayse') !== -1 || t.indexOf('kadın') !== -1 || t.indexOf('kadin') !== -1 || t === 'fasulye taze') {
@@ -122,6 +140,19 @@ function normalizeUrun(ad) {
   }
   if (t.indexOf('biber') !== -1 && t.indexOf('carliston') !== -1) t = 'biber carliston'
   if (t.indexOf('biber') !== -1 && t.indexOf('ucburun') !== -1) t = 'biber ucburun'
+
+  // Elma Starking
+  if (t.indexOf('elma') !== -1 && t.indexOf('starking') !== -1) {
+    t = 'elma starking'
+  }
+
+  // Havuc Beypazari (iri zaten dustu)
+  if (t.indexOf('havuc') !== -1 && t.indexOf('beypazari') !== -1) {
+    t = 'havuc beypazari'
+  }
+  if (t.indexOf('havuç') !== -1 && t.indexOf('beypazarı') !== -1) {
+    t = 'havuc beypazari'
+  }
 
   if (URUN_ESLESMELER[t]) return URUN_ESLESMELER[t]
   return t
