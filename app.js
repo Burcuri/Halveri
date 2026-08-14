@@ -20,6 +20,9 @@ const URUN_YOKSAY = [
   'koy', 'köy', 'tarla', 'other', 'aci', 'acı'
 ]
 
+// son token bunlarsa kayit tamamen atilir
+const COP_SON_TOKEN = ['li', 'lı', 'l', 'i', 'ı']
+
 const URUN_ESLESMELER = {
   'avakado': 'avokado', 'avacado': 'avokado',
   'capia': 'kapya', 'kapia': 'kapya',
@@ -29,6 +32,7 @@ const URUN_ESLESMELER = {
   'çarli': 'carliston', 'carli': 'carliston',
   'çarliston': 'carliston', 'carliston': 'carliston',
   'cherry': 'ceri', 'çeri': 'ceri', 'ceri': 'ceri',
+  'cilek': 'cilek', 'cılek': 'cilek', 'çilek': 'cilek',
   'incir': 'incir', 'ıncir': 'incir', 'incır': 'incir', 'ıncır': 'incir'
 }
 
@@ -47,7 +51,16 @@ const URUN_GOSTERIM = {
   'incir beyaz': 'İncir Beyaz',
   'borulce': 'Börülce',
   'feslegen reyhan': 'Fesleğen Reyhan',
-  'domates salkim ceri': 'Domates Salkım Çeri'
+  'domates salkim ceri': 'Domates Salkım Çeri',
+  'cilek': 'Çilek'
+}
+
+function copKayitMi(ad) {
+  var t = String(ad || '').trim().toLocaleLowerCase('tr')
+  t = t.replace(/[()[\]{}:;,./\\|_+\-–—'"`´]/g, ' ').replace(/\s+/g, ' ').trim()
+  var parts = t.split(' ').filter(Boolean)
+  if (parts.length < 2) return false
+  return COP_SON_TOKEN.indexOf(parts[parts.length - 1]) !== -1
 }
 
 function normalizeUrun(ad) {
@@ -55,28 +68,33 @@ function normalizeUrun(ad) {
   t = t.replace(/[()[\]{}:;,./\\|_+\-–—'"`´]/g, ' ')
   t = t.replace(/\s+/g, ' ').trim()
 
-  // granny smith - smith smith olmasin
-  t = t.replace(/\bgrannysm[iı]th\b/g, 'granny_smith')
-  t = t.replace(/\bgransimit\b/g, 'granny_smith')
-  t = t.replace(/\bgsmit\b/g, 'granny_smith')
-  t = t.replace(/\bgranny\s+smith\b/g, 'granny_smith')
+  // granny smith
+  t = t.replace(/grannysm[iı]th/g, 'granny_smith')
+  t = t.replace(/gransimit/g, 'granny_smith')
+  t = t.replace(/gsmit/g, 'granny_smith')
+  t = t.replace(/granny\s+smith/g, 'granny_smith')
   t = t.replace(/\bgranny\b/g, 'granny_smith')
-  t = t.replace(/\bgranny_smith(?:\s+smith)+\b/g, 'granny_smith')
+  t = t.replace(/granny_smith(\s+smith)+/g, 'granny_smith')
   t = t.replace(/granny_smith/g, 'granny smith')
 
-  t = t.replace(/\bs\s*mar[iı]a\b/g, 'santamaria')
-  t = t.replace(/\bsanta\s*mar[iı]a\b/g, 'santamaria')
-  t = t.replace(/\bh[iı]nd[iı]stan\s*cev[iı]z[iı]\b/g, 'hindistan cevizi')
-  t = t.replace(/\bb[öo]ğ?r[üu]lce\b/g, 'borulce')
-  t = t.replace(/\büç\s*burun\b/g, 'ucburun')
-  t = t.replace(/\buc\s*burun\b/g, 'ucburun')
-  t = t.replace(/\büçburun\b/g, 'ucburun')
-  t = t.replace(/\bucburun\b/g, 'ucburun')
-  t = t.replace(/\bçarliston\b/g, 'carliston')
-  t = t.replace(/\bçarli\b/g, 'carliston')
-  t = t.replace(/\bcarli\b/g, 'carliston')
-  t = t.replace(/\bcherry\b/g, 'ceri')
-  t = t.replace(/\bçeri\b/g, 'ceri')
+  t = t.replace(/s\s*mar[iı]a/g, 'santamaria')
+  t = t.replace(/santa\s*mar[iı]a/g, 'santamaria')
+  t = t.replace(/h[iı]nd[iı]stan\s*cev[iı]z[iı]/g, 'hindistan cevizi')
+  t = t.replace(/b[öo]ğ?r[üu]lce/g, 'borulce')
+
+  // ucburun - \\b kullanma (turkce harf)
+  t = t.replace(/üç\s*burun/g, 'ucburun')
+  t = t.replace(/uc\s*burun/g, 'ucburun')
+  t = t.replace(/üçburun/g, 'ucburun')
+  t = t.replace(/ucburun/g, 'ucburun')
+
+  t = t.replace(/çarliston/g, 'carliston')
+  t = t.replace(/çarli/g, 'carliston')
+  t = t.replace(/carli/g, 'carliston')
+  t = t.replace(/cherry/g, 'ceri')
+  t = t.replace(/çeri/g, 'ceri')
+  t = t.replace(/cılek/g, 'cilek')
+  t = t.replace(/çilek/g, 'cilek')
 
   t = t.split(' ').filter(function (w) {
     return w && URUN_YOKSAY.indexOf(w) === -1
@@ -203,6 +221,7 @@ function urunleriDoldur() {
   const map = new Map()
   tumVeriler.forEach(function (v) {
     if (!v.urun_adi) return
+    if (copKayitMi(v.urun_adi)) return
     var key = urunAnahtariBul(v.urun_adi, Array.from(map.keys()))
     if (!map.has(key)) map.set(key, v.urun_adi)
   })
@@ -270,7 +289,8 @@ function tabloyuDoldur() {
   var updateTimeEl = document.getElementById('updateTime')
   var productCountEl = document.getElementById('productCount')
   if (!tbody) return
-  var kaynak = tumVeriler
+
+  var kaynak = tumVeriler.filter(function (v) { return !copKayitMi(v.urun_adi) })
   if (seciliSehirler.length) kaynak = kaynak.filter(function (v) { return seciliSehirler.indexOf(v.sehir) !== -1 })
   if (seciliUrunler.length) {
     kaynak = kaynak.filter(function (v) {
@@ -311,7 +331,7 @@ function grafikCiz() {
   if (!urunler.length) {
     var map = new Map()
     tumVeriler.forEach(function (v) {
-      if (!v.urun_adi) return
+      if (!v.urun_adi || copKayitMi(v.urun_adi)) return
       var key = urunAnahtariBul(v.urun_adi, Array.from(map.keys()))
       if (!map.has(key)) map.set(key, true)
     })
@@ -321,17 +341,20 @@ function grafikCiz() {
   var basStr = aralikBaslangic(seciliAralik)
   var filtreli = tumVeriler.filter(function (v) {
     if (!v.tarih || String(v.tarih).slice(0, 10) < basStr) return false
+    if (copKayitMi(v.urun_adi)) return false
     if (sehirler.indexOf(v.sehir) === -1) return false
     for (var i = 0; i < urunler.length; i++) if (urunEslesiyorMu(urunler[i], v.urun_adi)) return true
     return false
   })
   if (!filtreli.length) { kutu.innerHTML = '<p class="grafik-bos">Bu aralikta veri yok</p>'; return }
+
   var seriMap = {}, tumTarihler = {}
   filtreli.forEach(function (item) {
     var t = String(item.tarih).slice(0, 10)
     var min = fiyatSayi(item.en_dusuk), max = fiyatSayi(item.en_yuksek)
     if (min == null && max == null) return
     var ort = (min != null && max != null) ? (min + max) / 2 : (min != null ? min : max)
+    ort = Math.round(ort * 100) / 100
     var label = guzelUrunAdi(item.urun_adi) + ' · ' + item.sehir
     if (!seriMap[label]) seriMap[label] = {}
     seriMap[label][t] = ort
@@ -345,21 +368,34 @@ function grafikCiz() {
   chartInstance = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: tarihler.map(function (t) { return new Date(t + 'T12:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' }) }),
+      labels: tarihler.map(function (t) {
+        return new Date(t + 'T12:00:00').toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })
+      }),
       datasets: labels.map(function (label, i) {
         return {
           label: label,
           data: tarihler.map(function (t) { return seriMap[label][t] != null ? seriMap[label][t] : null }),
-          borderColor: RENKLER[i % RENKLER.length], backgroundColor: 'transparent',
+          borderColor: RENKLER[i % RENKLER.length],
+          backgroundColor: 'transparent',
           spanGaps: true, tension: 0.25, pointRadius: 2, borderWidth: 2
         }
       })
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
+      responsive: true,
+      maintainAspectRatio: false,
       interaction: { mode: 'nearest', intersect: false },
       plugins: { legend: { display: true, position: 'top' } },
-      scales: { y: { beginAtZero: false, ticks: { callback: function (v) { return v + ' ₺' } } } }
+      scales: {
+        y: {
+          beginAtZero: false,
+          ticks: {
+            callback: function (v) {
+              return Number(v).toFixed(2).replace('.', ',') + ' ₺'
+            }
+          }
+        }
+      }
     }
   })
   ctx.parentElement.style.height = '320px'
@@ -413,5 +449,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var yasalAnladimBtn = document.getElementById('yasalAnladimBtn')
   if (yasalAcBtn && yasalModal) yasalAcBtn.addEventListener('click', function () { yasalModal.style.display = 'flex' })
   if (yasalAnladimBtn && yasalModal) yasalAnladimBtn.addEventListener('click', function () { yasalModal.style.display = 'none' })
-  if (yasalModal) yasalModal.addEventListener('click', function (e) { if (e.target === yasalModal) yasalModal.style.display = 'none' })
+  if (yasalModal) yasalModal.addEventListener('click', function (e) {
+    if (e.target === yasalModal) yasalModal.style.display = 'none'
+  })
 })
