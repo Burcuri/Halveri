@@ -37,7 +37,9 @@ const URUN_ESLESMELER = {
   'cilek': 'cilek', 'cılek': 'cilek', 'çilek': 'cilek',
   'incir': 'incir', 'ıncir': 'incir', 'incır': 'incir', 'ıncır': 'incir',
   'starkıng': 'starking', 'starkin': 'starking', 'starking': 'starking',
-  'dereotu': 'dereotu', 'dere': 'dere'
+  'dereotu': 'dereotu', 'dere': 'dere',
+  'vısne': 'visne', 'vişne': 'visne', 'visne': 'visne',
+  'semmizotu': 'semizotu', 'semizotu': 'semizotu'
 }
 
 const URUN_GOSTERIM = {
@@ -65,8 +67,20 @@ const URUN_GOSTERIM = {
   'lahana kara': 'Lahana Kara',
   'lahana mor': 'Lahana Mor',
   'marul': 'Marul',
-  'marul kivircik': 'Marul Kıvırcık',
-  'patlican bostan': 'Patlıcan Bostan'
+  'marul gobek': 'Marul Göbek',
+  'marul iceberg': 'Marul Iceberg',
+  'patlican bostan': 'Patlıcan Bostan',
+  'dereotu': 'Dereotu',
+  'maydanoz': 'Maydanoz',
+  'nane': 'Nane',
+  'reyhan': 'Reyhan',
+  'roka': 'Roka',
+  'tere': 'Tere',
+  'visne': 'Visne',
+  'sogan kuru': 'Soğan Kuru',
+  'semizotu': 'Semizotu',
+  'patates taze': 'Patates Taze',
+  'misir taze': 'Mısır Taze'
 }
 
 function copKayitMi(ad) {
@@ -121,6 +135,23 @@ function normalizeUrun(ad) {
   t = t.replace(/k[iı]v[iı]rc[iı]k/g, 'kivircik')
   t = t.replace(/k[iı]rm[iı]z[iı]/g, 'kirmizi')
   t = t.replace(/patl[iı]can/g, 'patlican')
+  // Belediye listelerinde otlara konan yanlis "Y " oneki (Y Dereotu, Y Roka ...)
+  t = t.replace(/^y\s+(dereotu|maydonoz|maydanoz|nane|reyhan|roka|tere)\b/g, '$1')
+  t = t.replace(/\bmaydonoz\b/g, 'maydanoz')
+  // Visne / Vişne / Vısne
+  t = t.replace(/\bv[iı][sş]ne\b/g, 'visne')
+  // Semizotu (semmizotu, semiz otu)
+  t = t.replace(/sem+iz\s*otu/g, 'semizotu')
+  t = t.replace(/\bsemmizotu\b/g, 'semizotu')
+  // Soğan yazımı
+  t = t.replace(/\bsoğan\b/g, 'sogan')
+  // Göbek / öbek
+  t = t.replace(/[gğ][oö]bek/g, 'gobek')
+  t = t.replace(/[oö]bek/g, 'obek')
+  // Iceberg varyasyonlari
+  t = t.replace(/aysberg/g, 'iceberg')
+  t = t.replace(/ceberg/g, 'iceberg')
+  t = t.replace(/ice\s*berg/g, 'iceberg')
   t = t.replace(/\s+/g, ' ').trim()
 
   // yok sayilacak kelimeler (iri, kg, duz, topak dahil)
@@ -178,15 +209,47 @@ function normalizeUrun(ad) {
     else if (t.indexOf('mor') !== -1) t = 'lahana mor'
   }
 
-  // Marul: düz -> marul; k / kıvırcık -> marul kivircik
-  if (t.indexOf('marul') !== -1) {
-    if (t === 'marul k' || t.indexOf('kivircik') !== -1) t = 'marul kivircik'
-    else if (t === 'marul' || t.indexOf('marul') === 0 && t.split(' ').length === 1) t = 'marul'
+  // Marul gruplari
+  // öbek/göbek salata, marul öbekli/göbekli -> marul gobek
+  if (t.indexOf('obek') !== -1 || t.indexOf('öbek') !== -1 || t.indexOf('gobek') !== -1 || t.indexOf('göbek') !== -1) {
+    if (t.indexOf('salata') !== -1 || t.indexOf('marul') !== -1) t = 'marul gobek'
+  }
+  if (t === 'amrul' || t.indexOf('amrul') !== -1) t = 'marul gobek'
+
+  // iceberg / aysberg / ceberg
+  if (t.indexOf('marul') !== -1 && (
+      t.indexOf('iceberg') !== -1 || t.indexOf('aysberg') !== -1 ||
+      t.indexOf('ceberg') !== -1 || t.indexOf('berg') !== -1)) {
+    t = 'marul iceberg'
+  }
+
+  // marul, marul k, marul a, marul kivircik -> marul
+  if (t.indexOf('marul') !== -1 && t !== 'marul gobek' && t !== 'marul iceberg') {
+    t = 'marul'
   }
 
   // Patlıcan Bostan (+ topak zaten dustu)
   if (t.indexOf('patlican') !== -1 && t.indexOf('bostan') !== -1) {
     t = 'patlican bostan'
+  }
+
+  // Soğan Kuru (+ "lı" son eki)
+  if (t.indexOf('sogan') !== -1 && t.indexOf('kuru') !== -1) {
+    t = 'sogan kuru'
+  }
+
+  // Patates Taze (+ "lı" ara eki: patates lı taze)
+  if (t.indexOf('patates') !== -1 && t.indexOf('taze') !== -1) {
+    t = 'patates taze'
+  }
+
+  // "lı/li" son ekini genel temizle (soğan kuru lı vb. yedek)
+  t = t.replace(/\s+(l[iı])$/g, '').trim()
+
+  // Mısır / Mısır Taze -> misir taze
+  t = t.replace(/\bmısır\b/g, 'misir')
+  if (t === 'misir' || (t.indexOf('misir') !== -1 && t.indexOf('taze') !== -1)) {
+    t = 'misir taze'
   }
 
   if (URUN_ESLESMELER[t]) return URUN_ESLESMELER[t]
