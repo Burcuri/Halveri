@@ -208,7 +208,7 @@ function urunEslesiyorMu(seciliKey, hamAd) {
 }
 
 async function verileriYukle() {
-  const { data, error } = await sb.from('hal_fiyatlari').select('*').order('tarih', { ascending: false })
+  const { data, error } = await sb.from('hal_fiyatlari').select('*').order('tarih', { ascending: false }).limit(10000)
   if (error) { console.error(error); return null }
   return data || []
 }
