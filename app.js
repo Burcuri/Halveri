@@ -18,7 +18,9 @@ let seciliUrunler = []
 const URUN_YOKSAY = [
   'diger', 'diğer', 'muhtelif', 'cesitli', 'çeşitli',
   'koy', 'köy', 'tarla', 'other', 'aci', 'acı',
-  'iri' // "Havuc Beypazari Iri" -> Havuc Beypazari
+  'iri', // "Havuc Beypazari Iri" -> Havuc Beypazari
+  'kg', 'gr', 'g', 'adet', 'demet', 'bag', 'bağ',
+  'duz', 'düz', 'topak', 'normal'
 ]
 
 const COP_SON_TOKEN = ['li', 'lı', 'l', 'i', 'ı']
@@ -57,7 +59,14 @@ const URUN_GOSTERIM = {
   'domates salkim ceri': 'Domates Salkım Çeri',
   'cilek': 'Çilek',
   'dereotu': 'Dereotu',
-  'havuc beypazari': 'Havuç Beypazarı'
+  'havuc beypazari': 'Havuç Beypazarı',
+  'lahana beyaz': 'Lahana Beyaz',
+  'lahana kirmizi': 'Lahana Kırmızı',
+  'lahana kara': 'Lahana Kara',
+  'lahana mor': 'Lahana Mor',
+  'marul': 'Marul',
+  'marul kivircik': 'Marul Kıvırcık',
+  'patlican bostan': 'Patlıcan Bostan'
 }
 
 function copKayitMi(ad) {
@@ -107,7 +116,14 @@ function normalizeUrun(ad) {
   t = t.replace(/cılek/g, 'cilek')
   t = t.replace(/çilek/g, 'cilek')
 
-  // yok sayilacak kelimeler (iri dahil)
+  // birim / kalite ekleri
+  t = t.replace(/\b(kg|gr|g|adet|demet|bag|bağ|lt|litre)\b/g, ' ')
+  t = t.replace(/k[iı]v[iı]rc[iı]k/g, 'kivircik')
+  t = t.replace(/k[iı]rm[iı]z[iı]/g, 'kirmizi')
+  t = t.replace(/patl[iı]can/g, 'patlican')
+  t = t.replace(/\s+/g, ' ').trim()
+
+  // yok sayilacak kelimeler (iri, kg, duz, topak dahil)
   t = t.split(' ').filter(function (w) {
     return w && URUN_YOKSAY.indexOf(w) === -1
   }).join(' ')
@@ -152,6 +168,25 @@ function normalizeUrun(ad) {
   }
   if (t.indexOf('havuç') !== -1 && t.indexOf('beypazarı') !== -1) {
     t = 'havuc beypazari'
+  }
+
+  // Lahana (kg zaten dustu)
+  if (t.indexOf('lahana') !== -1) {
+    if (t.indexOf('kirmizi') !== -1) t = 'lahana kirmizi'
+    else if (t.indexOf('beyaz') !== -1) t = 'lahana beyaz'
+    else if (t.indexOf('kara') !== -1) t = 'lahana kara'
+    else if (t.indexOf('mor') !== -1) t = 'lahana mor'
+  }
+
+  // Marul: düz -> marul; k / kıvırcık -> marul kivircik
+  if (t.indexOf('marul') !== -1) {
+    if (t === 'marul k' || t.indexOf('kivircik') !== -1) t = 'marul kivircik'
+    else if (t === 'marul' || t.indexOf('marul') === 0 && t.split(' ').length === 1) t = 'marul'
+  }
+
+  // Patlıcan Bostan (+ topak zaten dustu)
+  if (t.indexOf('patlican') !== -1 && t.indexOf('bostan') !== -1) {
+    t = 'patlican bostan'
   }
 
   if (URUN_ESLESMELER[t]) return URUN_ESLESMELER[t]
@@ -260,11 +295,19 @@ function urunleriDoldur() {
   kutu.innerHTML = '<input type="search" id="urunAra" placeholder="Urun ara..." style="margin-bottom:8px;width:100%;padding:8px 10px;border:1px solid #E1D9C4;border-radius:6px"><div id="urunListeKutusu"></div>'
   const listeKutu = document.getElementById('urunListeKutusu')
   function ciz(filtre) {
-    filtre = (filtre || '').toLocaleLowerCase('tr')
-    const goster = urunKayitlari.filter(function (pair) {
-      return !filtre || pair[0].indexOf(filtre) !== -1 || guzelUrunAdi(pair[0]).toLocaleLowerCase('tr').indexOf(filtre) !== -1
+    filtre = (filtre || '').toLocaleLowerCase('tr').trim()
+    var baslayan = []
+    var iceren = []
+    urunKayitlari.forEach(function (pair) {
+      var key = pair[0]
+      var guzel = guzelUrunAdi(key).toLocaleLowerCase('tr')
+      if (!filtre) { baslayan.push(pair); return }
+      if (key.indexOf(filtre) === 0 || guzel.indexOf(filtre) === 0) baslayan.push(pair)
+      else if (key.indexOf(filtre) !== -1 || guzel.indexOf(filtre) !== -1) iceren.push(pair)
     })
-    listeKutu.innerHTML = goster.slice(0, 120).map(function (pair) {
+    // Once harfle baslayanlar, sonra icerenler — K yazinca Kabak/Kiraz uste gelir
+    var goster = filtre ? baslayan.concat(iceren) : baslayan
+    listeKutu.innerHTML = goster.slice(0, 400).map(function (pair) {
       var key = pair[0]
       var checked = seciliUrunler.indexOf(key) !== -1 ? 'checked' : ''
       return '<label class="il-secim-satir"><input type="checkbox" value="' + key + '" ' + checked + '> ' + guzelUrunAdi(key) + '</label>'
