@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Türkiye Hal Fiyatları</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,560;9..144,650&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Emoji:wght@400..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="brand-muhur" aria-hidden="true">H</span>
+      <div class="brand-text">
+        <h1>Türkiye Hal Fiyatları</h1>
+        <p class="brand-etiket">Şehir şehir, gün gün — yaş sebze &amp; meyve borsası</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="sayfa">
+
+  <!-- KİŞİSELLEŞTİRME BANDI -->
+  <section class="kisisel-bant">
+    <div class="kisisel-satir">
+      <span class="kisisel-baslik">Kişisel Ayarlarım:</span>
+      <button id="illerBtn" class="bant-btn">Şehir <span id="illerSayisi" class="bant-sayac"></span></button>
+      <button id="urunEkleBtn" class="bant-btn bant-btn-vurgulu">Ürün</button>
+      <button id="referansBtn" class="bant-btn">Referans</button>
+      <button id="updateButton" class="bant-btn">Güncelle</button>
+    </div>
+
+    <div id="illerPanel" class="dropdown-panel" style="display:none">
+      <div class="il-bandi-baslik">Takip ettiğin iller (en fazla 3) — seçim sırası gösterge tipini belirler</div>
+      <div class="il-bandi-satirlar" id="ilBandiSatirlari"></div>
+    </div>
+
+    <div id="referansPanel" class="dropdown-panel" style="display:none">
+      <div class="il-bandi-baslik">Kıyas amaçlı referans çizgileri — grafikte sağ eksende, kalın gri gösterilir</div>
+      <div class="il-bandi-satirlar" id="referansSatirlari"></div>
+    </div>
+
+    <div id="urunEklePanel" class="dropdown-panel" style="display:none">
+      <div id="katalogListesi"></div>
+    </div>
+
+    <div id="takipCipleri" class="takip-cipleri"></div>
+  </section>
+
+  <!-- REKLAM BANDI -->
+  <div class="sponsor">
+    <span class="sponsor-muhur" aria-hidden="true">İlan</span>
+    <span class="sponsor-text">Lorem Ipsum Sponsorluk</span>
+  </div>
+
+  <!-- CANLI GRAFİK -->
+  <section class="canli-grafik-bolumu">
+    <div class="grafik-baslik-satiri">
+      <span class="eyebrow">Canlı Grafik</span>
+      <div class="zaman-secim" id="zamanSecim">
+        <button data-aralik="hafta" class="active">Hafta</button>
+        <button data-aralik="ay">Ay</button>
+        <button data-aralik="yil">Yıl</button>
+      </div>
+    </div>
+    <div class="grafik-kutu">
+      <p class="grafik-bos">Yükleniyor…</p>
+    </div>
+  </section>
+
+  <section class="info">
+    <div>
+      <span class="info-etiket">Son Güncelleme</span>
+      <span class="info-deger" id="updateTime">—</span>
+    </div>
+    <span class="info-ayrac" aria-hidden="true"></span>
+    <div>
+      <span class="info-etiket">Takip Edilen Tip</span>
+      <span class="info-deger" id="productCount">0</span>
+    </div>
+  </section>
+
+  <section class="defter-bolumu">
+    <span class="eyebrow">Fiyat Defteri</span>
+    <table>
+      <thead>
+        <tr>
+          <th>Ürün</th>
+          <th>Hal (İl)</th>
+          <th>Min</th>
+          <th>Max</th>
+        </tr>
+      </thead>
+      <tbody id="priceTable"></tbody>
+    </table>
+  </section>
+
+</main>
+
+<footer class="alt-bant">
+  <p>Halveri<span class="c-ust">©</span> bir <strong>Depom.app<span class="c-ust">©</span></strong> ürünüdür — <button type="button" id="yasalAcBtn" class="yasal-link">Yasal</button> · Copyright 2024 Tüm Hakları Saklıdır.</p>
+</footer>
+
+<div id="yasalModal" class="modal-ortu" style="display:none">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="yasalBaslik">
+    <h2 id="yasalBaslik">Yasal Bilgilendirme</h2>
+    <div class="modal-govde">
+      <p>DepomApp Halveri uygulama verilerini belediye hal ilanı kaynaklarından almaktadır.</p>
+      <p>Eğer Halveri Uygulamasını kullanıyorsanız bir DepomApp üyesisiniz.</p>
+      <p class="modal-alt-baslik">DepomApp Kullanım ve Aracılık Koşulları</p>
+      <p>DepomApp, alıcı ve satıcıları bir araya getiren bir platformdur; satışlara taraf olmaz, malın mülkiyetini hiçbir aşamada üstlenmez ve ödeme akışına aracılık etmez.</p>
+      <p>Kullanıcı, sisteme girdiği ÇKS bilgilerinin kendisine ait olduğunu ve resmi belgelerle desteklendiğini beyan eder. Yanlış veya başkasına ait bilgilerle yapılan işlemlerden doğacak sorumluluk kullanıcıya aittir.</p>
+      <p>Platform üzerinden gerçekleştirilen satışlarda iade süreci işletilmez; alıcı, malı teslim alım anında kontrol etmekle yükümlüdür.</p>
+      <p>Şirketimiz, sahte veya mükerrer hesapları önceden bildirimde bulunmaksızın kapatma hakkını saklı tutar.</p>
+      <p>Doğrulanmış Üretici Rozeti bedeli yalnızca ilk satış gerçekleştikten sonra tahsil edilir. Platform komisyon almaz.</p>
+      <p class="modal-not">Bu metnin tamamını okumadan da Anladım butonuna basarak veya pencerenin dışına dokunarak kapatabilirsiniz.</p>
+    </div>
+    <button type="button" id="yasalAnladimBtn" class="bant-btn bant-btn-vurgulu modal-btn">Anladım</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
